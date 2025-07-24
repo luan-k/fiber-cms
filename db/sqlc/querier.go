@@ -10,6 +10,8 @@ import (
 
 type Querier interface {
 	CreatePosts(ctx context.Context, arg CreatePostsParams) (Post, error)
+	GetPost(ctx context.Context, id int64) (Post, error)
+	ListPosts(ctx context.Context, arg ListPostsParams) ([]Post, error)
 }
 
 var _ Querier = (*Queries)(nil)
