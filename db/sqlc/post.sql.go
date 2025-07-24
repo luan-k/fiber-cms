@@ -129,3 +129,54 @@ func (q *Queries) ListPosts(ctx context.Context, arg ListPostsParams) ([]Post, e
 	}
 	return items, nil
 }
+
+const updatePost = `-- name: UpdatePost :one
+UPDATE posts
+SET name = COALESCE($1, name), 
+    description = COALESCE($2, description), 
+    user_id = COALESCE($3, user_id),
+    username = COALESCE($4, username), 
+    content = COALESCE($5, content), 
+    images = COALESCE($6, images), 
+    url = COALESCE($7, url)
+WHERE id = $8
+RETURNING id, name, description, user_id, username, content, images, url, created_at, changed_at
+`
+
+type UpdatePostParams struct {
+	Name        string   `json:"name"`
+	Description string   `json:"description"`
+	UserID      int64    `json:"user_id"`
+	Username    string   `json:"username"`
+	Content     string   `json:"content"`
+	Images      []string `json:"images"`
+	Url         string   `json:"url"`
+	ID          int64    `json:"id"`
+}
+
+func (q *Queries) UpdatePost(ctx context.Context, arg UpdatePostParams) (Post, error) {
+	row := q.db.QueryRowContext(ctx, updatePost,
+		arg.Name,
+		arg.Description,
+		arg.UserID,
+		arg.Username,
+		arg.Content,
+		pq.Array(arg.Images),
+		arg.Url,
+		arg.ID,
+	)
+	var i Post
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.UserID,
+		&i.Username,
+		&i.Content,
+		pq.Array(&i.Images),
+		&i.Url,
+		&i.CreatedAt,
+		&i.ChangedAt,
+	)
+	return i, err
+}

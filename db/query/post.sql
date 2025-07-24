@@ -20,3 +20,16 @@ SELECT * FROM posts
 ORDER BY id DESC
 LIMIT $1
 OFFSET $2;
+
+-- name: UpdatePost :one
+UPDATE posts
+SET name = COALESCE($1, name), 
+    description = COALESCE($2, description), 
+    user_id = COALESCE($3, user_id),
+    username = COALESCE($4, username), 
+    content = COALESCE($5, content), 
+    images = COALESCE($6, images), 
+    url = COALESCE($7, url)
+WHERE id = $8
+RETURNING *;
+
