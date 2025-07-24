@@ -17,7 +17,7 @@ CREATE TABLE "posts" (
   "username" varchar NOT NULL DEFAULT '',
   "images" varchar[] NOT NULL DEFAULT '{}',
   "url" varchar UNIQUE NOT NULL DEFAULT '',
-  "created_at" timestamptz NOT NULL DEFAULT (now()::timestamp;),
+  "created_at" timestamptz NOT NULL DEFAULT (now()),
   "changed_at" timestamptz NOT NULL DEFAULT '0001-01-01 00:00:00Z'
 );
 
