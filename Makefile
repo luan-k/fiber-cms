@@ -13,4 +13,7 @@ migrateup:
 migratedown:
 	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/fiber_cms?sslmode=disable" --verbose down
 
-.PHONY: createdb dropdb postgres migrateup migratedown
+sqlc:
+	sqlc generate
+
+.PHONY: createdb dropdb postgres migrateup migratedown sqlc

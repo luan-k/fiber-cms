@@ -15,6 +15,7 @@ CREATE TABLE "posts" (
   "description" varchar NOT NULL,
   "user_id" bigint NOT NULL,
   "username" varchar NOT NULL DEFAULT '',
+  "content" text NOT NULL DEFAULT '',
   "images" varchar[] NOT NULL DEFAULT '{}',
   "url" varchar UNIQUE NOT NULL DEFAULT '',
   "created_at" timestamptz NOT NULL DEFAULT (now()),
