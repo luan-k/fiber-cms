@@ -13,6 +13,6 @@
 - I have it installed on both windows and wsl
 
 - to install on wsl I used these commands
-- - `curl -L https://github.com/golang-migrate/migrate/releases/download/v4.14.1/migrate.linux-amd64.tar.gz | tar xvz`
-- - `sudo mv migrate.linux-amd64 $GOPATH/bin/migrate`
-- - then run `migrate --version to see if it installed correctly `
+  - `curl -L https://github.com/golang-migrate/migrate/releases/download/v4.14.1/migrate.linux-amd64.tar.gz | tar xvz`
+  - `sudo mv migrate.linux-amd64 $GOPATH/bin/migrate`
+  - then run `migrate --version` to see if it installed correctly
