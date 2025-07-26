@@ -61,6 +61,29 @@ func (q *Queries) CreatePosts(ctx context.Context, arg CreatePostsParams) (Post,
 	return i, err
 }
 
+const createUserPost = `-- name: CreateUserPost :one
+INSERT INTO user_posts (
+    post_id,
+    user_id,
+    "order"
+) VALUES (
+    $1, $2, $3
+) RETURNING post_id, user_id, "order"
+`
+
+type CreateUserPostParams struct {
+	PostID int64 `json:"post_id"`
+	UserID int64 `json:"user_id"`
+	Order  int32 `json:"order"`
+}
+
+func (q *Queries) CreateUserPost(ctx context.Context, arg CreateUserPostParams) (UserPost, error) {
+	row := q.db.QueryRowContext(ctx, createUserPost, arg.PostID, arg.UserID, arg.Order)
+	var i UserPost
+	err := row.Scan(&i.PostID, &i.UserID, &i.Order)
+	return i, err
+}
+
 const deletePost = `-- name: DeletePost :exec
 DELETE FROM posts
 WHERE id = $1
@@ -68,6 +91,16 @@ WHERE id = $1
 
 func (q *Queries) DeletePost(ctx context.Context, id int64) error {
 	_, err := q.db.ExecContext(ctx, deletePost, id)
+	return err
+}
+
+const deleteUserPost = `-- name: DeleteUserPost :exec
+DELETE FROM user_posts
+WHERE post_id = $1
+`
+
+func (q *Queries) DeleteUserPost(ctx context.Context, postID int64) error {
+	_, err := q.db.ExecContext(ctx, deleteUserPost, postID)
 	return err
 }
 
@@ -148,7 +181,8 @@ SET title = COALESCE($1, title),
     username = COALESCE($4, username),
     content = COALESCE($5, content),
     images = COALESCE($6, images),
-    url = COALESCE($7, url)
+    url = COALESCE($7, url),
+    changed_at = now()
 WHERE id = $8
 RETURNING id, title, description, content, user_id, username, images, url, created_at, changed_at
 `

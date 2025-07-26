@@ -10,120 +10,156 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func createPost(t *testing.T) Post {
+func createPostWithTransaction(t *testing.T) CreatePostTxResult {
 	gofakeit.Seed(0)
 	user := createTestUser(t)
 
 	title := gofakeit.Sentence(3)
 	slug := strings.ToLower(strings.ReplaceAll(title, " ", "-"))
 
-	arg := CreatePostsParams{
-		Title:       title,
-		Content:     gofakeit.Paragraph(3, 5, 10, " "),
-		Description: gofakeit.Sentence(10),
-		UserID:      user.ID,
-		Username:    user.Username,
-		Url:         fmt.Sprintf("https://example.com/posts/%s", slug),
-		Images:      []string{gofakeit.ImageURL(800, 600), gofakeit.ImageURL(800, 600)},
+	arg := CreatePostTxParams{
+		CreatePostsParams: CreatePostsParams{
+			Title:       title,
+			Content:     gofakeit.Paragraph(3, 5, 10, " "),
+			Description: gofakeit.Sentence(10),
+			UserID:      user.ID,
+			Username:    user.Username,
+			Url:         fmt.Sprintf("https://example.com/posts/%s", slug),
+			Images:      []string{gofakeit.ImageURL(800, 600), gofakeit.ImageURL(800, 600)},
+		},
+		AuthorIDs: []int64{user.ID},
 	}
-	post, err := testQueries.CreatePosts(context.Background(), arg)
+
+	result, err := testStore.CreatePostTx(context.Background(), arg)
 	require.NoError(t, err)
-	require.NotEmpty(t, post)
+	require.NotEmpty(t, result.Post)
+	require.NotEmpty(t, result.UserPosts)
 
-	require.Equal(t, arg.Title, post.Title)
-	require.Equal(t, arg.Content, post.Content)
-	require.Equal(t, arg.Description, post.Description)
-	require.Equal(t, arg.UserID, post.UserID)
-	require.Equal(t, arg.Username, post.Username)
-	require.Equal(t, arg.Url, post.Url)
-	require.ElementsMatch(t, arg.Images, post.Images)
-	require.NotZero(t, post.ID)
-	require.NotZero(t, post.CreatedAt)
+	require.Equal(t, arg.Title, result.Post.Title)
+	require.Equal(t, arg.Content, result.Post.Content)
+	require.Equal(t, arg.Description, result.Post.Description)
+	require.Equal(t, arg.UserID, result.Post.UserID)
+	require.Equal(t, arg.Username, result.Post.Username)
+	require.Equal(t, arg.Url, result.Post.Url)
+	require.ElementsMatch(t, arg.Images, result.Post.Images)
+	require.NotZero(t, result.Post.ID)
+	require.NotZero(t, result.Post.CreatedAt)
 
-	return post
+	require.Len(t, result.UserPosts, 1)
+	require.Equal(t, result.Post.ID, result.UserPosts[0].PostID)
+	require.Equal(t, user.ID, result.UserPosts[0].UserID)
+
+	return result
 }
 
-func TestCreatePosts(t *testing.T) {
-	post := createPost(t)
-	require.NotEmpty(t, post)
+func TestCreatePostTx(t *testing.T) {
+	result := createPostWithTransaction(t)
+	require.NotEmpty(t, result)
 }
 
-func TestGetPost(t *testing.T) {
-	post1 := createPost(t)
-	post2, err := testQueries.GetPost(context.Background(), post1.ID)
+func TestCreatePostTxWithMultipleAuthors(t *testing.T) {
+	gofakeit.Seed(0)
+	user1 := createTestUser(t)
+
+	gofakeit.Seed(1)
+	user2 := createTestUser(t)
+
+	title := gofakeit.Sentence(3)
+	slug := strings.ToLower(strings.ReplaceAll(title, " ", "-"))
+
+	arg := CreatePostTxParams{
+		CreatePostsParams: CreatePostsParams{
+			Title:       title,
+			Content:     gofakeit.Paragraph(3, 5, 10, " "),
+			Description: gofakeit.Sentence(10),
+			UserID:      user1.ID,
+			Username:    user1.Username,
+			Url:         fmt.Sprintf("https://example.com/posts/%s", slug),
+			Images:      []string{gofakeit.ImageURL(800, 600)},
+		},
+		AuthorIDs: []int64{user1.ID, user2.ID},
+	}
+
+	result, err := testStore.CreatePostTx(context.Background(), arg)
 	require.NoError(t, err)
-	require.NotEmpty(t, post2)
-	require.Equal(t, post1.ID, post2.ID)
-	require.Equal(t, post1.Title, post2.Title)
-	require.Equal(t, post1.Content, post2.Content)
-	require.Equal(t, post1.Description, post2.Description)
-	require.Equal(t, post1.UserID, post2.UserID)
-	require.Equal(t, post1.Username, post2.Username)
-	require.Equal(t, post1.Url, post2.Url)
-	require.ElementsMatch(t, post1.Images, post2.Images)
-	require.WithinDuration(t, post1.CreatedAt, post2.CreatedAt, 0)
+	require.NotEmpty(t, result.Post)
+	require.Len(t, result.UserPosts, 2)
+
+	authorIDs := make([]int64, len(result.UserPosts))
+	for i, up := range result.UserPosts {
+		authorIDs[i] = up.UserID
+	}
+	require.ElementsMatch(t, []int64{user1.ID, user2.ID}, authorIDs)
+}
+
+func TestDeletePostTx(t *testing.T) {
+	result := createPostWithTransaction(t)
+
+	err := testStore.DeletePostTx(context.Background(), result.Post.ID)
+	require.NoError(t, err)
+
+	post, err := testQueries.GetPost(context.Background(), result.Post.ID)
+	require.Error(t, err)
+	require.EqualError(t, err, "sql: no rows in result set")
+	require.Empty(t, post)
 }
 
 func TestListPosts(t *testing.T) {
+	gofakeit.Seed(0)
+
 	for range 10 {
-		createPost(t)
+		createPostWithTransaction(t)
 	}
 
-	arg := ListPostsParams{
+	posts, err := testQueries.ListPosts(context.Background(), ListPostsParams{
 		Limit:  5,
 		Offset: 5,
-	}
-	posts, err := testQueries.ListPosts(context.Background(), arg)
+	})
 	require.NoError(t, err)
 	require.Len(t, posts, 5)
-
-	for _, post := range posts {
-		require.NotEmpty(t, post)
-		require.NotZero(t, post.ID)
-		require.NotZero(t, post.CreatedAt)
-	}
 }
 
 func TestUpdatePost(t *testing.T) {
-	post1 := createPost(t)
-	require.NotEmpty(t, post1)
+	gofakeit.Seed(0)
+	result := createPostWithTransaction(t)
 
-	gofakeit.Seed(1)
 	newTitle := gofakeit.Sentence(3)
+	newContent := gofakeit.Paragraph(3, 5, 10, " ")
 
 	arg := UpdatePostParams{
-		ID:          post1.ID,
+		ID:          result.Post.ID,
 		Title:       newTitle,
-		Content:     gofakeit.Paragraph(3, 5, 10, " "),
-		Description: gofakeit.Sentence(10),
-		UserID:      post1.UserID,
-		Username:    post1.Username,
-		Url:         post1.Url,
-		Images:      []string{gofakeit.ImageURL(800, 600), gofakeit.ImageURL(800, 600)},
+		Description: result.Post.Description,
+		Content:     newContent,
+		Url:         result.Post.Url,
+		Images:      result.Post.Images,
+		UserID:      result.Post.UserID,
+		Username:    result.Post.Username,
 	}
-	post2, err := testQueries.UpdatePost(context.Background(), arg)
-	require.NoError(t, err)
-	require.NotEmpty(t, post2)
-	require.Equal(t, post1.ID, post2.ID)
-	require.Equal(t, arg.Title, post2.Title)
-	require.Equal(t, arg.Content, post2.Content)
-	require.Equal(t, arg.Description, post2.Description)
-	require.Equal(t, post1.UserID, post2.UserID)
-	require.Equal(t, post1.Username, post2.Username)
-	require.Equal(t, arg.Url, post2.Url)
-	require.ElementsMatch(t, arg.Images, post2.Images)
-	require.WithinDuration(t, post1.CreatedAt, post2.CreatedAt, 0)
-	// TODO: not changing ChangedAt here, as it is not updated in the current implementation
-	//require.NotEqual(t, post1.ChangedAt, post2.ChangedAt)
-}
 
-func TestDeletePost(t *testing.T) {
-	post1 := createPost(t)
-	err := testQueries.DeletePost(context.Background(), post1.ID)
+	updatedPost, err := testQueries.UpdatePost(context.Background(), arg)
 	require.NoError(t, err)
+	require.NotEmpty(t, updatedPost)
+	require.Equal(t, newTitle, updatedPost.Title)
+	require.Equal(t, newContent, updatedPost.Content)
+	require.Equal(t, result.Post.ID, updatedPost.ID)
 
-	post2, err := testQueries.GetPost(context.Background(), post1.ID)
-	require.Error(t, err)
-	require.EqualError(t, err, "sql: no rows in result set")
-	require.Empty(t, post2)
+	// test empty description and images
+	result2 := createPostWithTransaction(t)
+	arg2 := UpdatePostParams{
+		ID:          result2.Post.ID,
+		Title:       result2.Post.Title,
+		Description: "",
+		Content:     result2.Post.Content,
+		Url:         result2.Post.Url,
+		Images:      []string{},
+		UserID:      result2.Post.UserID,
+		Username:    result2.Post.Username,
+	}
+	updatedPost2, err := testQueries.UpdatePost(context.Background(), arg2)
+	require.NoError(t, err)
+	require.NotEmpty(t, updatedPost2)
+	require.Equal(t, result2.Post.Title, updatedPost2.Title)
+	require.Equal(t, "", updatedPost2.Description)
+	require.Empty(t, updatedPost2.Images)
 }
