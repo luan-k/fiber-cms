@@ -13,6 +13,25 @@ type Store interface {
 	DeleteUserTx(ctx context.Context, id int64) error
 	DeleteUserWithTransferTx(ctx context.Context, arg DeleteUserWithTransferTxParams) error
 	UpdateUserTx(ctx context.Context, arg UpdateUserTxParams) (UpdateUserTxResult, error)
+	ExecTx(ctx context.Context, fn func(*Queries) error) error
+}
+
+func (store *SQLStore) ExecTx(ctx context.Context, fn func(*Queries) error) error {
+	tx, err := store.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	q := New(tx)
+	err = fn(q)
+	if err != nil {
+		if rbErr := tx.Rollback(); rbErr != nil {
+			return fmt.Errorf("tx err: %v, rb err: %v", err, rbErr)
+		}
+		return err
+	}
+
+	return tx.Commit()
 }
 
 // SQLStore gives us the functions to interact with the database
