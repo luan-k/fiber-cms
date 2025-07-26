@@ -1,6 +1,6 @@
 module github.com/luan-k/fiber-cms
 
-go 1.24.5
+go 1.24
 
 require (
 	github.com/brianvoe/gofakeit/v6 v6.28.0
