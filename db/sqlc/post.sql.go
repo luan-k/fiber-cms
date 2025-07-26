@@ -13,7 +13,7 @@ import (
 
 const createPosts = `-- name: CreatePosts :one
 INSERT INTO posts (
-    name,
+    title,
     description,
     user_id,
     username,
@@ -22,11 +22,11 @@ INSERT INTO posts (
     images
 ) VALUES (
     $1, $2, $3, $4, $5, $6, $7
-) RETURNING id, name, description, user_id, username, content, images, url, created_at, changed_at
+) RETURNING id, title, description, content, user_id, username, images, url, created_at, changed_at
 `
 
 type CreatePostsParams struct {
-	Name        string   `json:"name"`
+	Title       string   `json:"title"`
 	Description string   `json:"description"`
 	UserID      int64    `json:"user_id"`
 	Username    string   `json:"username"`
@@ -37,7 +37,7 @@ type CreatePostsParams struct {
 
 func (q *Queries) CreatePosts(ctx context.Context, arg CreatePostsParams) (Post, error) {
 	row := q.db.QueryRowContext(ctx, createPosts,
-		arg.Name,
+		arg.Title,
 		arg.Description,
 		arg.UserID,
 		arg.Username,
@@ -48,11 +48,11 @@ func (q *Queries) CreatePosts(ctx context.Context, arg CreatePostsParams) (Post,
 	var i Post
 	err := row.Scan(
 		&i.ID,
-		&i.Name,
+		&i.Title,
 		&i.Description,
+		&i.Content,
 		&i.UserID,
 		&i.Username,
-		&i.Content,
 		pq.Array(&i.Images),
 		&i.Url,
 		&i.CreatedAt,
@@ -72,7 +72,7 @@ func (q *Queries) DeletePost(ctx context.Context, id int64) error {
 }
 
 const getPost = `-- name: GetPost :one
-SELECT id, name, description, user_id, username, content, images, url, created_at, changed_at FROM posts 
+SELECT id, title, description, content, user_id, username, images, url, created_at, changed_at FROM posts 
 WHERE id = $1 LIMIT 1
 `
 
@@ -81,11 +81,11 @@ func (q *Queries) GetPost(ctx context.Context, id int64) (Post, error) {
 	var i Post
 	err := row.Scan(
 		&i.ID,
-		&i.Name,
+		&i.Title,
 		&i.Description,
+		&i.Content,
 		&i.UserID,
 		&i.Username,
-		&i.Content,
 		pq.Array(&i.Images),
 		&i.Url,
 		&i.CreatedAt,
@@ -95,7 +95,7 @@ func (q *Queries) GetPost(ctx context.Context, id int64) (Post, error) {
 }
 
 const listPosts = `-- name: ListPosts :many
-SELECT id, name, description, user_id, username, content, images, url, created_at, changed_at FROM posts 
+SELECT id, title, description, content, user_id, username, images, url, created_at, changed_at FROM posts 
 ORDER BY id DESC
 LIMIT $1
 OFFSET $2
@@ -117,11 +117,11 @@ func (q *Queries) ListPosts(ctx context.Context, arg ListPostsParams) ([]Post, e
 		var i Post
 		if err := rows.Scan(
 			&i.ID,
-			&i.Name,
+			&i.Title,
 			&i.Description,
+			&i.Content,
 			&i.UserID,
 			&i.Username,
-			&i.Content,
 			pq.Array(&i.Images),
 			&i.Url,
 			&i.CreatedAt,
@@ -142,7 +142,7 @@ func (q *Queries) ListPosts(ctx context.Context, arg ListPostsParams) ([]Post, e
 
 const updatePost = `-- name: UpdatePost :one
 UPDATE posts
-SET name = COALESCE($1, name),
+SET title = COALESCE($1, title),
     description = COALESCE($2, description),
     user_id = COALESCE($3, user_id),
     username = COALESCE($4, username),
@@ -150,11 +150,11 @@ SET name = COALESCE($1, name),
     images = COALESCE($6, images),
     url = COALESCE($7, url)
 WHERE id = $8
-RETURNING id, name, description, user_id, username, content, images, url, created_at, changed_at
+RETURNING id, title, description, content, user_id, username, images, url, created_at, changed_at
 `
 
 type UpdatePostParams struct {
-	Name        string   `json:"name"`
+	Title       string   `json:"title"`
 	Description string   `json:"description"`
 	UserID      int64    `json:"user_id"`
 	Username    string   `json:"username"`
@@ -166,7 +166,7 @@ type UpdatePostParams struct {
 
 func (q *Queries) UpdatePost(ctx context.Context, arg UpdatePostParams) (Post, error) {
 	row := q.db.QueryRowContext(ctx, updatePost,
-		arg.Name,
+		arg.Title,
 		arg.Description,
 		arg.UserID,
 		arg.Username,
@@ -178,11 +178,11 @@ func (q *Queries) UpdatePost(ctx context.Context, arg UpdatePostParams) (Post, e
 	var i Post
 	err := row.Scan(
 		&i.ID,
-		&i.Name,
+		&i.Title,
 		&i.Description,
+		&i.Content,
 		&i.UserID,
 		&i.Username,
-		&i.Content,
 		pq.Array(&i.Images),
 		&i.Url,
 		&i.CreatedAt,

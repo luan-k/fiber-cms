@@ -11,26 +11,32 @@ CREATE TABLE "users" (
 
 CREATE TABLE "posts" (
   "id" BIGSERIAL PRIMARY KEY,
-  "name" varchar NOT NULL,
+  "title" varchar NOT NULL,
   "description" varchar NOT NULL,
+  "content" text NOT NULL,
   "user_id" bigint NOT NULL,
   "username" varchar NOT NULL DEFAULT '',
-  "content" text NOT NULL DEFAULT '',
   "images" varchar[] NOT NULL DEFAULT '{}',
   "url" varchar UNIQUE NOT NULL DEFAULT '',
   "created_at" timestamptz NOT NULL DEFAULT (now()),
   "changed_at" timestamptz NOT NULL DEFAULT '0001-01-01 00:00:00Z'
 );
 
-CREATE TABLE "categories" (
+CREATE TABLE "user_posts" (
+  "post_id" bigint NOT NULL,
+  "user_id" bigint NOT NULL,
+  "order" int NOT NULL DEFAULT 0
+);
+
+CREATE TABLE "taxonomies" (
   "id" BIGSERIAL PRIMARY KEY,
   "name" varchar NOT NULL,
   "description" varchar NOT NULL
 );
 
-CREATE TABLE "posts_categories" (
+CREATE TABLE "posts_taxonomies" (
   "post_id" bigint NOT NULL,
-  "category_id" bigint NOT NULL
+  "taxonomy_id" bigint NOT NULL
 );
 
 CREATE TABLE "sessions" (
@@ -60,15 +66,19 @@ CREATE TABLE "post_images" (
   "order" int NOT NULL DEFAULT 0
 );
 
-CREATE UNIQUE INDEX "unique_post_category" ON "posts_categories" ("post_id", "category_id");
+CREATE UNIQUE INDEX "unique_post_user" ON "user_posts" ("post_id", "user_id");
+
+CREATE UNIQUE INDEX "unique_post_taxonomy" ON "posts_taxonomies" ("post_id", "taxonomy_id");
 
 CREATE UNIQUE INDEX "unique_post_image" ON "post_images" ("post_id", "image_id");
 
-ALTER TABLE "posts" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
+ALTER TABLE "posts_taxonomies" ADD FOREIGN KEY ("post_id") REFERENCES "posts" ("id");
 
-ALTER TABLE "posts_categories" ADD FOREIGN KEY ("post_id") REFERENCES "posts" ("id");
+ALTER TABLE "user_posts" ADD FOREIGN KEY ("post_id") REFERENCES "posts" ("id");
 
-ALTER TABLE "posts_categories" ADD FOREIGN KEY ("category_id") REFERENCES "categories" ("id");
+ALTER TABLE "user_posts" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
+
+ALTER TABLE "posts_taxonomies" ADD FOREIGN KEY ("taxonomy_id") REFERENCES "taxonomies" ("id");
 
 ALTER TABLE "sessions" ADD FOREIGN KEY ("username") REFERENCES "users" ("username");
 

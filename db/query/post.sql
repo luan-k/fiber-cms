@@ -1,6 +1,6 @@
 -- name: CreatePosts :one
 INSERT INTO posts (
-    name,
+    title,
     description,
     user_id,
     username,
@@ -23,7 +23,7 @@ OFFSET $2;
 
 -- name: UpdatePost :one
 UPDATE posts
-SET name = COALESCE($1, name),
+SET title = COALESCE($1, title),
     description = COALESCE($2, description),
     user_id = COALESCE($3, user_id),
     username = COALESCE($4, username),

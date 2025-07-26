@@ -18,7 +18,7 @@ func createPost(t *testing.T) Post {
 	slug := strings.ToLower(strings.ReplaceAll(title, " ", "-"))
 
 	arg := CreatePostsParams{
-		Name:        title,
+		Title:       title,
 		Content:     gofakeit.Paragraph(3, 5, 10, " "),
 		Description: gofakeit.Sentence(10),
 		UserID:      user.ID,
@@ -30,7 +30,7 @@ func createPost(t *testing.T) Post {
 	require.NoError(t, err)
 	require.NotEmpty(t, post)
 
-	require.Equal(t, arg.Name, post.Name)
+	require.Equal(t, arg.Title, post.Title)
 	require.Equal(t, arg.Content, post.Content)
 	require.Equal(t, arg.Description, post.Description)
 	require.Equal(t, arg.UserID, post.UserID)
@@ -54,7 +54,7 @@ func TestGetPost(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, post2)
 	require.Equal(t, post1.ID, post2.ID)
-	require.Equal(t, post1.Name, post2.Name)
+	require.Equal(t, post1.Title, post2.Title)
 	require.Equal(t, post1.Content, post2.Content)
 	require.Equal(t, post1.Description, post2.Description)
 	require.Equal(t, post1.UserID, post2.UserID)
@@ -93,7 +93,7 @@ func TestUpdatePost(t *testing.T) {
 
 	arg := UpdatePostParams{
 		ID:          post1.ID,
-		Name:        newTitle,
+		Title:       newTitle,
 		Content:     gofakeit.Paragraph(3, 5, 10, " "),
 		Description: gofakeit.Sentence(10),
 		UserID:      post1.UserID,
@@ -105,7 +105,7 @@ func TestUpdatePost(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, post2)
 	require.Equal(t, post1.ID, post2.ID)
-	require.Equal(t, arg.Name, post2.Name)
+	require.Equal(t, arg.Title, post2.Title)
 	require.Equal(t, arg.Content, post2.Content)
 	require.Equal(t, arg.Description, post2.Description)
 	require.Equal(t, post1.UserID, post2.UserID)

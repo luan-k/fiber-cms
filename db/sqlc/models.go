@@ -10,12 +10,6 @@ import (
 	"github.com/google/uuid"
 )
 
-type Category struct {
-	ID          int64  `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-}
-
 type Image struct {
 	ID          int64     `json:"id"`
 	Name        string    `json:"name"`
@@ -28,11 +22,11 @@ type Image struct {
 
 type Post struct {
 	ID          int64     `json:"id"`
-	Name        string    `json:"name"`
+	Title       string    `json:"title"`
 	Description string    `json:"description"`
+	Content     string    `json:"content"`
 	UserID      int64     `json:"user_id"`
 	Username    string    `json:"username"`
-	Content     string    `json:"content"`
 	Images      []string  `json:"images"`
 	Url         string    `json:"url"`
 	CreatedAt   time.Time `json:"created_at"`
@@ -45,9 +39,9 @@ type PostImage struct {
 	Order   int32 `json:"order"`
 }
 
-type PostsCategory struct {
+type PostsTaxonomy struct {
 	PostID     int64 `json:"post_id"`
-	CategoryID int64 `json:"category_id"`
+	TaxonomyID int64 `json:"taxonomy_id"`
 }
 
 type Session struct {
@@ -61,6 +55,12 @@ type Session struct {
 	CreatedAt    time.Time `json:"created_at"`
 }
 
+type Taxonomy struct {
+	ID          int64  `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
 type User struct {
 	ID                int64     `json:"id"`
 	Username          string    `json:"username"`
@@ -70,4 +70,10 @@ type User struct {
 	PasswordChangedAt time.Time `json:"password_changed_at"`
 	CreatedAt         time.Time `json:"created_at"`
 	Role              string    `json:"role"`
+}
+
+type UserPost struct {
+	PostID int64 `json:"post_id"`
+	UserID int64 `json:"user_id"`
+	Order  int32 `json:"order"`
 }
