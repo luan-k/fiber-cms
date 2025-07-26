@@ -16,6 +16,7 @@ type Image struct {
 	Description string    `json:"description"`
 	Alt         string    `json:"alt"`
 	ImagePath   string    `json:"image_path"`
+	UserID      int64     `json:"user_id"`
 	CreatedAt   time.Time `json:"created_at"`
 	ChangedAt   time.Time `json:"changed_at"`
 }

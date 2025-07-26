@@ -9,12 +9,19 @@ import (
 )
 
 type Querier interface {
+	CreateImage(ctx context.Context, arg CreateImageParams) (Image, error)
+	CreatePostImage(ctx context.Context, arg CreatePostImageParams) (PostImage, error)
 	CreatePostTaxonomy(ctx context.Context, arg CreatePostTaxonomyParams) (PostsTaxonomy, error)
 	CreatePosts(ctx context.Context, arg CreatePostsParams) (Post, error)
 	CreateTaxonomy(ctx context.Context, arg CreateTaxonomyParams) (Taxonomy, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	CreateUserPost(ctx context.Context, arg CreateUserPostParams) (UserPost, error)
+	DeleteImage(ctx context.Context, id int64) error
+	DeleteImagePosts(ctx context.Context, imageID int64) error
+	DeleteImagesByUserID(ctx context.Context, userID int64) error
 	DeletePost(ctx context.Context, id int64) error
+	DeletePostImage(ctx context.Context, arg DeletePostImageParams) error
+	DeletePostImages(ctx context.Context, postID int64) error
 	DeletePostTaxonomies(ctx context.Context, postID int64) error
 	DeletePostTaxonomy(ctx context.Context, arg DeletePostTaxonomyParams) error
 	DeletePostsByUserID(ctx context.Context, userID int64) error
@@ -24,8 +31,14 @@ type Querier interface {
 	DeleteUserPost(ctx context.Context, postID int64) error
 	DeleteUserPostsByUserID(ctx context.Context, userID int64) error
 	DeleteUserSessions(ctx context.Context, id int64) error
+	GetImage(ctx context.Context, id int64) (Image, error)
+	GetImagePostCount(ctx context.Context, imageID int64) (int64, error)
+	GetImagesByPost(ctx context.Context, postID int64) ([]Image, error)
+	GetImagesByUser(ctx context.Context, arg GetImagesByUserParams) ([]Image, error)
+	GetPopularImages(ctx context.Context, limit int32) ([]GetPopularImagesRow, error)
 	GetPopularTaxonomies(ctx context.Context, limit int32) ([]GetPopularTaxonomiesRow, error)
 	GetPost(ctx context.Context, id int64) (Post, error)
+	GetPostImageCount(ctx context.Context, postID int64) (int64, error)
 	GetPostTaxonomies(ctx context.Context, postID int64) ([]Taxonomy, error)
 	GetPostTaxonomyCount(ctx context.Context, postID int64) (int64, error)
 	GetTaxonomy(ctx context.Context, id int64) (Taxonomy, error)
@@ -35,12 +48,18 @@ type Querier interface {
 	GetUser(ctx context.Context, id int64) (User, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByUsername(ctx context.Context, username string) (User, error)
+	GetUserImageCount(ctx context.Context, userID int64) (int64, error)
+	ListImages(ctx context.Context, arg ListImagesParams) ([]Image, error)
+	ListImagesWithPostCount(ctx context.Context, arg ListImagesWithPostCountParams) ([]ListImagesWithPostCountRow, error)
 	ListPosts(ctx context.Context, arg ListPostsParams) ([]Post, error)
 	ListTaxonomies(ctx context.Context, arg ListTaxonomiesParams) ([]Taxonomy, error)
 	ListTaxonomiesWithPostCount(ctx context.Context, arg ListTaxonomiesWithPostCountParams) ([]ListTaxonomiesWithPostCountRow, error)
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]User, error)
+	SearchImagesByName(ctx context.Context, arg SearchImagesByNameParams) ([]Image, error)
 	SearchTaxonomiesByName(ctx context.Context, arg SearchTaxonomiesByNameParams) ([]Taxonomy, error)
+	TransferImagesToUser(ctx context.Context, arg TransferImagesToUserParams) error
 	TransferPostsToAdmin(ctx context.Context, arg TransferPostsToAdminParams) error
+	UpdateImage(ctx context.Context, arg UpdateImageParams) (Image, error)
 	UpdatePost(ctx context.Context, arg UpdatePostParams) (Post, error)
 	UpdatePostsUsername(ctx context.Context, arg UpdatePostsUsernameParams) error
 	UpdateTaxonomy(ctx context.Context, arg UpdateTaxonomyParams) (Taxonomy, error)

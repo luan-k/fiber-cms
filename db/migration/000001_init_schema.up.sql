@@ -56,6 +56,7 @@ CREATE TABLE "images" (
   "description" varchar NOT NULL,
   "alt" varchar NOT NULL,
   "image_path" varchar NOT NULL,
+  "user_id" bigint NOT NULL,
   "created_at" timestamptz NOT NULL DEFAULT (now()),
   "changed_at" timestamptz NOT NULL DEFAULT '0001-01-01 00:00:00Z'
 );
@@ -85,3 +86,5 @@ ALTER TABLE "sessions" ADD FOREIGN KEY ("username") REFERENCES "users" ("usernam
 ALTER TABLE "post_images" ADD FOREIGN KEY ("post_id") REFERENCES "posts" ("id");
 
 ALTER TABLE "post_images" ADD FOREIGN KEY ("image_id") REFERENCES "images" ("id");
+
+ALTER TABLE "images" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");

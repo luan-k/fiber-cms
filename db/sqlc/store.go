@@ -20,6 +20,11 @@ type Store interface {
 	UpdatePostTaxonomiesTx(ctx context.Context, arg UpdatePostTaxonomiesTxParams) error
 	CreateTaxonomyAndLinkTx(ctx context.Context, arg CreateTaxonomyAndLinkTxParams) (CreateTaxonomyAndLinkTxResult, error)
 
+	CreatePostWithImagesTx(ctx context.Context, arg CreatePostWithImagesTxParams) (CreatePostWithImagesTxResult, error)
+	DeleteImageTx(ctx context.Context, arg DeleteImageTxParams) error
+	UpdatePostImagesTx(ctx context.Context, arg UpdatePostImagesTxParams) error
+	CreateImageAndLinkTx(ctx context.Context, arg CreateImageAndLinkTxParams) (CreateImageAndLinkTxResult, error)
+
 	ExecTx(ctx context.Context, fn func(*Queries) error) error
 }
 
@@ -143,12 +148,18 @@ func (store *SQLStore) DeletePostTx(ctx context.Context, id int64) error {
 
 func (store *SQLStore) DeleteUserTx(ctx context.Context, id int64) error {
 	err := store.execTx(ctx, func(q *Queries) error {
+
 		err := q.DeleteUserSessions(ctx, id)
 		if err != nil {
 			return err
 		}
 
 		err = q.DeleteUserPostsByUserID(ctx, id)
+		if err != nil {
+			return err
+		}
+
+		err = q.DeleteImagesByUserID(ctx, id)
 		if err != nil {
 			return err
 		}
@@ -224,6 +235,7 @@ type DeleteUserWithTransferTxParams struct {
 
 func (store *SQLStore) DeleteUserWithTransferTx(ctx context.Context, arg DeleteUserWithTransferTxParams) error {
 	err := store.execTx(ctx, func(q *Queries) error {
+
 		err := q.TransferPostsToAdmin(ctx, TransferPostsToAdminParams{
 			UserID:   arg.UserID,
 			UserID_2: arg.TransferToID,
@@ -233,6 +245,14 @@ func (store *SQLStore) DeleteUserWithTransferTx(ctx context.Context, arg DeleteU
 		}
 
 		err = q.UpdateUserPostsOwnership(ctx, UpdateUserPostsOwnershipParams{
+			UserID:   arg.UserID,
+			UserID_2: arg.TransferToID,
+		})
+		if err != nil {
+			return err
+		}
+
+		err = q.TransferImagesToUser(ctx, TransferImagesToUserParams{
 			UserID:   arg.UserID,
 			UserID_2: arg.TransferToID,
 		})
@@ -429,6 +449,203 @@ func (store *SQLStore) CreateTaxonomyAndLinkTx(ctx context.Context, arg CreateTa
 		result.PostTaxonomy, err = q.CreatePostTaxonomy(ctx, CreatePostTaxonomyParams{
 			PostID:     arg.PostID,
 			TaxonomyID: result.Taxonomy.ID,
+		})
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return result, err
+}
+
+type CreatePostWithImagesTxParams struct {
+	CreatePostsParams
+	AuthorIDs []int64
+	ImageIDs  []int64
+}
+
+type CreatePostWithImagesTxResult struct {
+	Post       Post        `json:"post"`
+	UserPosts  []UserPost  `json:"user_posts"`
+	PostImages []PostImage `json:"post_images"`
+}
+
+type DeleteImageTxParams struct {
+	ImageID int64
+	UserID  int64
+}
+
+type UpdatePostImagesTxParams struct {
+	PostID   int64
+	ImageIDs []int64
+}
+
+type CreateImageAndLinkTxParams struct {
+	Name        string
+	Description string
+	Alt         string
+	ImagePath   string
+	UserID      int64
+	PostID      int64
+	Order       int32
+}
+
+type CreateImageAndLinkTxResult struct {
+	Image     Image     `json:"image"`
+	PostImage PostImage `json:"post_image"`
+}
+
+func (store *SQLStore) CreatePostWithImagesTx(ctx context.Context, arg CreatePostWithImagesTxParams) (CreatePostWithImagesTxResult, error) {
+	var result CreatePostWithImagesTxResult
+
+	err := store.ExecTx(ctx, func(q *Queries) error {
+		var err error
+
+		result.Post, err = q.CreatePosts(ctx, arg.CreatePostsParams)
+		if err != nil {
+			return err
+		}
+
+		userPost, err := q.CreateUserPost(ctx, CreateUserPostParams{
+			PostID: result.Post.ID,
+			UserID: arg.UserID,
+			Order:  0,
+		})
+		if err != nil {
+			return err
+		}
+		result.UserPosts = append(result.UserPosts, userPost)
+
+		for i, authorID := range arg.AuthorIDs {
+			if authorID != arg.UserID {
+				userPost, err := q.CreateUserPost(ctx, CreateUserPostParams{
+					PostID: result.Post.ID,
+					UserID: authorID,
+					Order:  int32(i + 1),
+				})
+				if err != nil {
+					return err
+				}
+				result.UserPosts = append(result.UserPosts, userPost)
+			}
+		}
+
+		for i, imageID := range arg.ImageIDs {
+
+			_, err := q.GetImage(ctx, imageID)
+			if err != nil {
+				return fmt.Errorf("image %d not found: %w", imageID, err)
+			}
+
+			postImage, err := q.CreatePostImage(ctx, CreatePostImageParams{
+				PostID:  result.Post.ID,
+				ImageID: imageID,
+				Order:   int32(i),
+			})
+			if err != nil {
+				return err
+			}
+			result.PostImages = append(result.PostImages, postImage)
+		}
+
+		return nil
+	})
+
+	return result, err
+}
+
+func (store *SQLStore) DeleteImageTx(ctx context.Context, arg DeleteImageTxParams) error {
+	err := store.ExecTx(ctx, func(q *Queries) error {
+
+		image, err := q.GetImage(ctx, arg.ImageID)
+		if err != nil {
+			return err
+		}
+
+		if image.UserID != arg.UserID {
+			return fmt.Errorf("user %d does not own image %d", arg.UserID, arg.ImageID)
+		}
+
+		err = q.DeleteImagePosts(ctx, arg.ImageID)
+		if err != nil {
+			return err
+		}
+
+		err = q.DeleteImage(ctx, arg.ImageID)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return err
+}
+
+func (store *SQLStore) UpdatePostImagesTx(ctx context.Context, arg UpdatePostImagesTxParams) error {
+	err := store.ExecTx(ctx, func(q *Queries) error {
+
+		_, err := q.GetPost(ctx, arg.PostID)
+		if err != nil {
+			return fmt.Errorf("post %d not found: %w", arg.PostID, err)
+		}
+
+		err = q.DeletePostImages(ctx, arg.PostID)
+		if err != nil {
+			return err
+		}
+
+		for i, imageID := range arg.ImageIDs {
+
+			_, err := q.GetImage(ctx, imageID)
+			if err != nil {
+				return fmt.Errorf("image %d not found: %w", imageID, err)
+			}
+
+			_, err = q.CreatePostImage(ctx, CreatePostImageParams{
+				PostID:  arg.PostID,
+				ImageID: imageID,
+				Order:   int32(i),
+			})
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+
+	return err
+}
+
+func (store *SQLStore) CreateImageAndLinkTx(ctx context.Context, arg CreateImageAndLinkTxParams) (CreateImageAndLinkTxResult, error) {
+	var result CreateImageAndLinkTxResult
+
+	err := store.ExecTx(ctx, func(q *Queries) error {
+		var err error
+
+		result.Image, err = q.CreateImage(ctx, CreateImageParams{
+			Name:        arg.Name,
+			Description: arg.Description,
+			Alt:         arg.Alt,
+			ImagePath:   arg.ImagePath,
+			UserID:      arg.UserID,
+		})
+		if err != nil {
+			return err
+		}
+
+		_, err = q.GetPost(ctx, arg.PostID)
+		if err != nil {
+			return fmt.Errorf("post %d not found: %w", arg.PostID, err)
+		}
+
+		result.PostImage, err = q.CreatePostImage(ctx, CreatePostImageParams{
+			PostID:  arg.PostID,
+			ImageID: result.Image.ID,
+			Order:   arg.Order,
 		})
 		if err != nil {
 			return err
