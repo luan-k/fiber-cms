@@ -52,6 +52,16 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 	return i, err
 }
 
+const deletePostsByUserID = `-- name: DeletePostsByUserID :exec
+DELETE FROM posts
+WHERE user_id = $1
+`
+
+func (q *Queries) DeletePostsByUserID(ctx context.Context, userID int64) error {
+	_, err := q.db.ExecContext(ctx, deletePostsByUserID, userID)
+	return err
+}
+
 const deleteUser = `-- name: DeleteUser :exec
 DELETE FROM users
 WHERE id = $1
@@ -59,6 +69,26 @@ WHERE id = $1
 
 func (q *Queries) DeleteUser(ctx context.Context, id int64) error {
 	_, err := q.db.ExecContext(ctx, deleteUser, id)
+	return err
+}
+
+const deleteUserPostsByUserID = `-- name: DeleteUserPostsByUserID :exec
+DELETE FROM user_posts
+WHERE user_id = $1
+`
+
+func (q *Queries) DeleteUserPostsByUserID(ctx context.Context, userID int64) error {
+	_, err := q.db.ExecContext(ctx, deleteUserPostsByUserID, userID)
+	return err
+}
+
+const deleteUserSessions = `-- name: DeleteUserSessions :exec
+DELETE FROM sessions
+WHERE username = (SELECT username FROM users WHERE users.id = $1)
+`
+
+func (q *Queries) DeleteUserSessions(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, deleteUserSessions, id)
 	return err
 }
 
@@ -171,6 +201,38 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]User, e
 	return items, nil
 }
 
+const transferPostsToAdmin = `-- name: TransferPostsToAdmin :exec
+UPDATE posts 
+SET user_id = $2, username = (SELECT username FROM users WHERE id = $2)
+WHERE user_id = $1
+`
+
+type TransferPostsToAdminParams struct {
+	UserID   int64 `json:"user_id"`
+	UserID_2 int64 `json:"user_id_2"`
+}
+
+func (q *Queries) TransferPostsToAdmin(ctx context.Context, arg TransferPostsToAdminParams) error {
+	_, err := q.db.ExecContext(ctx, transferPostsToAdmin, arg.UserID, arg.UserID_2)
+	return err
+}
+
+const updatePostsUsername = `-- name: UpdatePostsUsername :exec
+UPDATE posts
+SET username = $2
+WHERE user_id = $1
+`
+
+type UpdatePostsUsernameParams struct {
+	UserID   int64  `json:"user_id"`
+	Username string `json:"username"`
+}
+
+func (q *Queries) UpdatePostsUsername(ctx context.Context, arg UpdatePostsUsernameParams) error {
+	_, err := q.db.ExecContext(ctx, updatePostsUsername, arg.UserID, arg.Username)
+	return err
+}
+
 const updateUser = `-- name: UpdateUser :one
 UPDATE users 
 SET 
@@ -216,4 +278,20 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, e
 		&i.Role,
 	)
 	return i, err
+}
+
+const updateUserPostsOwnership = `-- name: UpdateUserPostsOwnership :exec
+UPDATE user_posts 
+SET user_id = $2
+WHERE user_id = $1
+`
+
+type UpdateUserPostsOwnershipParams struct {
+	UserID   int64 `json:"user_id"`
+	UserID_2 int64 `json:"user_id_2"`
+}
+
+func (q *Queries) UpdateUserPostsOwnership(ctx context.Context, arg UpdateUserPostsOwnershipParams) error {
+	_, err := q.db.ExecContext(ctx, updateUserPostsOwnership, arg.UserID, arg.UserID_2)
+	return err
 }

@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -32,20 +33,34 @@ func createTestUser(t *testing.T) User {
 	return user
 }
 
+func createTestUserWithPosts(t *testing.T) (User, CreatePostTxResult) {
+	user := createTestUser(t)
+
+	title := gofakeit.Sentence(3)
+	slug := strings.ToLower(strings.ReplaceAll(title, " ", "-"))
+
+	postArg := CreatePostTxParams{
+		CreatePostsParams: CreatePostsParams{
+			Title:       title,
+			Content:     gofakeit.Paragraph(3, 5, 10, " "),
+			Description: gofakeit.Sentence(10),
+			UserID:      user.ID,
+			Username:    user.Username,
+			Url:         fmt.Sprintf("https://example.com/posts/%s", slug),
+			Images:      []string{gofakeit.ImageURL(800, 600)},
+		},
+		AuthorIDs: []int64{user.ID},
+	}
+
+	post, err := testStore.CreatePostTx(context.Background(), postArg)
+	require.NoError(t, err)
+
+	return user, post
+}
+
 func TestCreateUser(t *testing.T) {
 	user := createTestUser(t)
 	require.NotEmpty(t, user)
-}
-
-func TestDeleteUser(t *testing.T) {
-	user := createTestUser(t)
-	err := testQueries.DeleteUser(context.Background(), user.ID)
-	require.NoError(t, err)
-
-	user2, err := testQueries.GetUser(context.Background(), user.ID)
-	require.Error(t, err)
-	require.EqualError(t, err, "sql: no rows in result set")
-	require.Empty(t, user2)
 }
 
 func TestGetUser(t *testing.T) {
@@ -136,4 +151,94 @@ func TestUpdateUser(t *testing.T) {
 	require.Equal(t, arg.Email, user2.Email)
 	require.Equal(t, arg.HashedPassword, user2.HashedPassword)
 	require.Equal(t, arg.Role, user2.Role)
+}
+
+func TestDeleteUserWithTransferTx(t *testing.T) {
+	user, post := createTestUserWithPosts(t)
+
+	adminUser := createTestUser(t)
+
+	err := testStore.DeleteUserWithTransferTx(context.Background(), DeleteUserWithTransferTxParams{
+		UserID:       user.ID,
+		TransferToID: adminUser.ID,
+	})
+	require.NoError(t, err)
+
+	deletedUser, err := testQueries.GetUser(context.Background(), user.ID)
+	require.Error(t, err)
+	require.EqualError(t, err, "sql: no rows in result set")
+	require.Empty(t, deletedUser)
+
+	existingPost, err := testQueries.GetPost(context.Background(), post.Post.ID)
+	require.NoError(t, err)
+	require.NotEmpty(t, existingPost)
+	require.Equal(t, adminUser.ID, existingPost.UserID)
+	require.Equal(t, adminUser.Username, existingPost.Username)
+}
+
+func TestDeleteUserTx_NuclearOption(t *testing.T) {
+	user, post := createTestUserWithPosts(t)
+
+	err := testStore.DeleteUserTx(context.Background(), user.ID)
+	require.NoError(t, err)
+
+	deletedUser, err := testQueries.GetUser(context.Background(), user.ID)
+	require.Error(t, err)
+	require.Empty(t, deletedUser)
+
+	deletedPost, err := testQueries.GetPost(context.Background(), post.Post.ID)
+	require.Error(t, err)
+	require.Empty(t, deletedPost)
+}
+
+func TestDeleteUser_WithoutTransaction_ShouldFail(t *testing.T) {
+	user, _ := createTestUserWithPosts(t)
+
+	err := testQueries.DeleteUser(context.Background(), user.ID)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "foreign key constraint")
+}
+
+func TestUpdateUserTx(t *testing.T) {
+	user := createTestUser(t)
+
+	newUsername := fmt.Sprintf("updated_%s_%d", gofakeit.Username(), time.Now().UnixNano())
+	newEmail := fmt.Sprintf("updated_%d_%s", time.Now().UnixNano(), gofakeit.Email())
+
+	arg := UpdateUserTxParams{
+		UpdateUserParams: UpdateUserParams{
+			ID:             user.ID,
+			Username:       newUsername,
+			FullName:       gofakeit.Name(),
+			Email:          newEmail,
+			HashedPassword: gofakeit.Password(true, true, true, true, false, 32),
+			Role:           "admin",
+		},
+		CheckUniqueness: true,
+	}
+
+	result, err := testStore.UpdateUserTx(context.Background(), arg)
+	require.NoError(t, err)
+	require.NotEmpty(t, result.User)
+	require.Equal(t, arg.Username, result.User.Username)
+	require.Equal(t, arg.Email, result.User.Email)
+	require.Equal(t, arg.Role, result.User.Role)
+}
+
+func TestUpdateUserTx_UniqueConstraintViolation(t *testing.T) {
+	user1 := createTestUser(t)
+	user2 := createTestUser(t)
+
+	arg := UpdateUserTxParams{
+		UpdateUserParams: UpdateUserParams{
+			ID:       user2.ID,
+			Username: user1.Username,
+			Email:    user2.Email,
+		},
+		CheckUniqueness: true,
+	}
+
+	_, err := testStore.UpdateUserTx(context.Background(), arg)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "already exists")
 }

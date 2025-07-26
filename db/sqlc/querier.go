@@ -13,16 +13,22 @@ type Querier interface {
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	CreateUserPost(ctx context.Context, arg CreateUserPostParams) (UserPost, error)
 	DeletePost(ctx context.Context, id int64) error
+	DeletePostsByUserID(ctx context.Context, userID int64) error
 	DeleteUser(ctx context.Context, id int64) error
 	DeleteUserPost(ctx context.Context, postID int64) error
+	DeleteUserPostsByUserID(ctx context.Context, userID int64) error
+	DeleteUserSessions(ctx context.Context, id int64) error
 	GetPost(ctx context.Context, id int64) (Post, error)
 	GetUser(ctx context.Context, id int64) (User, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByUsername(ctx context.Context, username string) (User, error)
 	ListPosts(ctx context.Context, arg ListPostsParams) ([]Post, error)
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]User, error)
+	TransferPostsToAdmin(ctx context.Context, arg TransferPostsToAdminParams) error
 	UpdatePost(ctx context.Context, arg UpdatePostParams) (Post, error)
+	UpdatePostsUsername(ctx context.Context, arg UpdatePostsUsernameParams) error
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
+	UpdateUserPostsOwnership(ctx context.Context, arg UpdateUserPostsOwnershipParams) error
 }
 
 var _ Querier = (*Queries)(nil)

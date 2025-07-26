@@ -44,3 +44,30 @@ RETURNING *;
 -- name: DeleteUser :exec
 DELETE FROM users
 WHERE id = $1;
+
+-- name: DeleteUserSessions :exec
+DELETE FROM sessions
+WHERE username = (SELECT username FROM users WHERE users.id = $1);
+
+-- name: DeleteUserPostsByUserID :exec
+DELETE FROM user_posts
+WHERE user_id = $1;
+
+-- name: DeletePostsByUserID :exec
+DELETE FROM posts
+WHERE user_id = $1;
+
+-- name: UpdatePostsUsername :exec
+UPDATE posts
+SET username = $2
+WHERE user_id = $1;
+
+-- name: TransferPostsToAdmin :exec
+UPDATE posts 
+SET user_id = $2, username = (SELECT username FROM users WHERE id = $2)
+WHERE user_id = $1;
+
+-- name: UpdateUserPostsOwnership :exec
+UPDATE user_posts 
+SET user_id = $2
+WHERE user_id = $1;
