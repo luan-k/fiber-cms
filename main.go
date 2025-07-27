@@ -1,13 +1,32 @@
 package main
 
-import "github.com/gofiber/fiber/v2"
+import (
+	"database/sql"
+	"log"
+
+	_ "github.com/lib/pq"
+	"github.com/luan-k/fiber-cms/api"
+	db "github.com/luan-k/fiber-cms/db/sqlc"
+)
+
+const (
+	dbDriver = "postgres"
+	dbSource = "postgresql://root:secret@localhost:5432/fiber_cms?sslmode=disable"
+	apiPort  = ":8080"
+)
 
 func main() {
-	app := fiber.New()
 
-	app.Get("/", func(c *fiber.Ctx) error {
-		return c.SendString("Hello, World!")
-	})
+	conn, err := sql.Open(dbDriver, dbSource)
+	if err != nil {
+		log.Fatal("cannot connect to db:", err)
+	}
 
-	app.Listen(":3000")
+	server := api.NewServer(db.NewStore(conn))
+
+	log.Println("Starting Fiber CMS API on port 8080...")
+	err = server.Start(apiPort)
+	if err != nil {
+		log.Fatal("cannot start server:", err)
+	}
 }
