@@ -117,3 +117,84 @@ WHERE user_id = $1;
 UPDATE images 
 SET user_id = $2
 WHERE user_id = $1;
+
+
+-- name: GetPostWithImages :one
+SELECT 
+    p.*,
+    COALESCE(
+        json_agg(
+            json_build_object(
+                'id', i.id,
+                'name', i.name,
+                'description', i.description,
+                'alt', i.alt,
+                'image_path', i.image_path,
+                'user_id', i.user_id,
+                'created_at', i.created_at,
+                'changed_at', i.changed_at,
+                'order', pi."order"
+            ) ORDER BY pi."order", i.created_at
+        ) FILTER (WHERE i.id IS NOT NULL),
+        '[]'::json
+    ) as images
+FROM posts p
+LEFT JOIN post_images pi ON p.id = pi.post_id
+LEFT JOIN images i ON pi.image_id = i.id
+WHERE p.id = $1
+GROUP BY p.id, p.title, p.description, p.content, p.user_id, p.username, p.url, p.created_at, p.changed_at;
+
+-- name: ListPostsWithImages :many
+SELECT 
+    p.*,
+    COALESCE(
+        json_agg(
+            json_build_object(
+                'id', i.id,
+                'name', i.name,
+                'description', i.description,
+                'alt', i.alt,
+                'image_path', i.image_path,
+                'user_id', i.user_id,
+                'created_at', i.created_at,
+                'changed_at', i.changed_at,
+                'order', pi."order"
+            ) ORDER BY pi."order", i.created_at
+        ) FILTER (WHERE i.id IS NOT NULL),
+        '[]'::json
+    ) as images
+FROM posts p
+LEFT JOIN post_images pi ON p.id = pi.post_id
+LEFT JOIN images i ON pi.image_id = i.id
+GROUP BY p.id, p.title, p.description, p.content, p.user_id, p.username, p.url, p.created_at, p.changed_at
+ORDER BY p.created_at DESC
+LIMIT $1
+OFFSET $2;
+
+-- name: GetPostsByUserWithImages :many
+SELECT 
+    p.*,
+    COALESCE(
+        json_agg(
+            json_build_object(
+                'id', i.id,
+                'name', i.name,
+                'description', i.description,
+                'alt', i.alt,
+                'image_path', i.image_path,
+                'user_id', i.user_id,
+                'created_at', i.created_at,
+                'changed_at', i.changed_at,
+                'order', pi."order"
+            ) ORDER BY pi."order", i.created_at
+        ) FILTER (WHERE i.id IS NOT NULL),
+        '[]'::json
+    ) as images
+FROM posts p
+LEFT JOIN post_images pi ON p.id = pi.post_id
+LEFT JOIN images i ON pi.image_id = i.id
+WHERE p.user_id = $1
+GROUP BY p.id, p.title, p.description, p.content, p.user_id, p.username, p.url, p.created_at, p.changed_at
+ORDER BY p.created_at DESC
+LIMIT $2
+OFFSET $3;

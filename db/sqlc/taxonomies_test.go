@@ -125,7 +125,6 @@ func TestCreatePostWithTaxonomiesTx(t *testing.T) {
 			UserID:      user.ID,
 			Username:    user.Username,
 			Url:         fmt.Sprintf("https://example.com/posts/%s", slug),
-			Images:      []string{gofakeit.ImageURL(800, 600)},
 		},
 		AuthorIDs:   []int64{user.ID},
 		TaxonomyIDs: []int64{taxonomy1.ID, taxonomy2.ID},
@@ -432,10 +431,15 @@ func TestGetPopularTaxonomies(t *testing.T) {
 		}
 	}
 
-	require.NotNil(t, popularResult, "Popular taxonomy should be in results")
-	require.NotNil(t, moderateResult, "Moderate taxonomy should be in results")
-	require.Equal(t, int64(3), popularResult.PostCount)
-	require.Equal(t, int64(1), moderateResult.PostCount)
+	t.Logf("Found %d popular taxonomies:", len(results))
+	for i, result := range results {
+		t.Logf("  %d: %s (%d posts)", i+1, result.Name, result.PostCount)
+	}
+
+	require.NotNil(t, popularResult, "Popular taxonomy (%s) should be in results", popular.Name)
+	require.NotNil(t, moderateResult, "Moderate taxonomy (%s) should be in results", moderate.Name)
+	require.Equal(t, int64(3), popularResult.PostCount, "Popular taxonomy should have 3 posts")
+	require.Equal(t, int64(1), moderateResult.PostCount, "Moderate taxonomy should have 1 post")
 
 	popularIndex := -1
 	moderateIndex := -1
@@ -451,6 +455,9 @@ func TestGetPopularTaxonomies(t *testing.T) {
 	if popularIndex != -1 && moderateIndex != -1 {
 		require.Less(t, popularIndex, moderateIndex, "Popular taxonomy should appear before moderate taxonomy in results")
 	}
+
+	t.Logf("Popular taxonomy found at index %d with %d posts", popularIndex, popularResult.PostCount)
+	t.Logf("Moderate taxonomy found at index %d with %d posts", moderateIndex, moderateResult.PostCount)
 }
 
 func TestGetTaxonomyPostCount(t *testing.T) {

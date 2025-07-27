@@ -11,16 +11,41 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var userCounter int64 = 0
+
 func createTestUser(t *testing.T) User {
-	gofakeit.Seed(0)
+	userCounter++
+	gofakeit.Seed(userCounter)
+
+	timestamp := time.Now().UnixNano() + userCounter
+
+	username := fmt.Sprintf("%s_%d", gofakeit.Username(), timestamp)
+	email := fmt.Sprintf("%d_%s", timestamp, gofakeit.Email())
+	fullName := gofakeit.Name()
+	hashedPassword := gofakeit.Password(true, true, true, true, false, 32)
+	role := "user"
+
+	if username == "" || strings.TrimSpace(username) == "" {
+		username = fmt.Sprintf("testuser_%d", timestamp)
+	}
+	if email == "" || strings.TrimSpace(email) == "" {
+		email = fmt.Sprintf("test_%d@example.com", timestamp)
+	}
+	if fullName == "" || strings.TrimSpace(fullName) == "" {
+		fullName = fmt.Sprintf("Test User %d", userCounter)
+	}
+	if hashedPassword == "" || strings.TrimSpace(hashedPassword) == "" {
+		hashedPassword = fmt.Sprintf("hashedpassword_%d", timestamp)
+	}
 
 	arg := CreateUserParams{
-		Username:       gofakeit.Username(),
-		Email:          gofakeit.Email(),
-		FullName:       gofakeit.Name(),
-		HashedPassword: gofakeit.Password(true, true, true, true, false, 32),
-		Role:           "user",
+		Username:       username,
+		Email:          email,
+		FullName:       fullName,
+		HashedPassword: hashedPassword,
+		Role:           role,
 	}
+
 	user, err := testQueries.CreateUser(context.Background(), arg)
 	require.NoError(t, err)
 	require.NotEmpty(t, user)
@@ -47,7 +72,6 @@ func createTestUserWithPosts(t *testing.T) (User, CreatePostTxResult) {
 			UserID:      user.ID,
 			Username:    user.Username,
 			Url:         fmt.Sprintf("https://example.com/posts/%s", slug),
-			Images:      []string{gofakeit.ImageURL(800, 600)},
 		},
 		AuthorIDs: []int64{user.ID},
 	}
@@ -115,15 +139,18 @@ func TestListUsers(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, users, 5)
 
-	for _, user := range users {
-		require.NotEmpty(t, user)
-		require.NotZero(t, user.ID)
-		require.NotZero(t, user.CreatedAt)
-		require.NotEmpty(t, user.Username)
-		require.NotEmpty(t, user.Email)
-		require.NotEmpty(t, user.FullName)
-		require.NotEmpty(t, user.HashedPassword)
-		require.NotEmpty(t, user.Role)
+	for i, user := range users {
+		t.Logf("User %d: ID=%d, Username='%s', Email='%s', FullName='%s', Role='%s'",
+			i, user.ID, user.Username, user.Email, user.FullName, user.Role)
+
+		require.NotEmpty(t, user, "User struct should not be empty")
+		require.NotZero(t, user.ID, "User ID should not be zero")
+		require.NotZero(t, user.CreatedAt, "User CreatedAt should not be zero")
+		require.NotEmpty(t, user.Username, "Username should not be empty")
+		require.NotEmpty(t, user.Email, "Email should not be empty")
+		require.NotEmpty(t, user.FullName, "FullName should not be empty")
+		require.NotEmpty(t, user.HashedPassword, "HashedPassword should not be empty")
+		require.NotEmpty(t, user.Role, "Role should not be empty")
 	}
 }
 

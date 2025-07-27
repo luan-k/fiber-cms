@@ -25,7 +25,6 @@ func createPostWithTransaction(t *testing.T) CreatePostTxResult {
 			UserID:      user.ID,
 			Username:    user.Username,
 			Url:         fmt.Sprintf("https://example.com/posts/%s", slug),
-			Images:      []string{gofakeit.ImageURL(800, 600), gofakeit.ImageURL(800, 600)},
 		},
 		AuthorIDs: []int64{user.ID},
 	}
@@ -41,7 +40,7 @@ func createPostWithTransaction(t *testing.T) CreatePostTxResult {
 	require.Equal(t, arg.UserID, result.Post.UserID)
 	require.Equal(t, arg.Username, result.Post.Username)
 	require.Equal(t, arg.Url, result.Post.Url)
-	require.ElementsMatch(t, arg.Images, result.Post.Images)
+
 	require.NotZero(t, result.Post.ID)
 	require.NotZero(t, result.Post.CreatedAt)
 
@@ -75,7 +74,6 @@ func TestCreatePostTxWithMultipleAuthors(t *testing.T) {
 			UserID:      user1.ID,
 			Username:    user1.Username,
 			Url:         fmt.Sprintf("https://example.com/posts/%s", slug),
-			Images:      []string{gofakeit.ImageURL(800, 600)},
 		},
 		AuthorIDs: []int64{user1.ID, user2.ID},
 	}
@@ -132,9 +130,9 @@ func TestUpdatePost(t *testing.T) {
 		Description: result.Post.Description,
 		Content:     newContent,
 		Url:         result.Post.Url,
-		Images:      result.Post.Images,
-		UserID:      result.Post.UserID,
-		Username:    result.Post.Username,
+
+		UserID:   result.Post.UserID,
+		Username: result.Post.Username,
 	}
 
 	updatedPost, err := testQueries.UpdatePost(context.Background(), arg)
@@ -144,7 +142,6 @@ func TestUpdatePost(t *testing.T) {
 	require.Equal(t, newContent, updatedPost.Content)
 	require.Equal(t, result.Post.ID, updatedPost.ID)
 
-	// test empty description and images
 	result2 := createPostWithTransaction(t)
 	arg2 := UpdatePostParams{
 		ID:          result2.Post.ID,
@@ -152,14 +149,52 @@ func TestUpdatePost(t *testing.T) {
 		Description: "",
 		Content:     result2.Post.Content,
 		Url:         result2.Post.Url,
-		Images:      []string{},
-		UserID:      result2.Post.UserID,
-		Username:    result2.Post.Username,
+
+		UserID:   result2.Post.UserID,
+		Username: result2.Post.Username,
 	}
 	updatedPost2, err := testQueries.UpdatePost(context.Background(), arg2)
 	require.NoError(t, err)
 	require.NotEmpty(t, updatedPost2)
 	require.Equal(t, result2.Post.Title, updatedPost2.Title)
 	require.Equal(t, "", updatedPost2.Description)
-	require.Empty(t, updatedPost2.Images)
+}
+
+func TestCreatePostWithImages(t *testing.T) {
+	user := createTestUser(t)
+
+	_, image1 := createTestImage(t)
+	_, image2 := createTestImage(t)
+
+	title := gofakeit.Sentence(3)
+	slug := strings.ToLower(strings.ReplaceAll(title, " ", "-"))
+
+	arg := CreatePostWithImagesTxParams{
+		CreatePostsParams: CreatePostsParams{
+			Title:       title,
+			Content:     gofakeit.Paragraph(3, 5, 10, " "),
+			Description: gofakeit.Sentence(10),
+			UserID:      user.ID,
+			Username:    user.Username,
+			Url:         fmt.Sprintf("https://example.com/posts/%s", slug),
+		},
+		AuthorIDs: []int64{user.ID},
+		ImageIDs:  []int64{image1.ID, image2.ID},
+	}
+
+	result, err := testStore.CreatePostWithImagesTx(context.Background(), arg)
+	require.NoError(t, err)
+	require.NotEmpty(t, result.Post)
+	require.Len(t, result.UserPosts, 1)
+	require.Len(t, result.PostImages, 2)
+
+	postImages, err := testQueries.GetImagesByPost(context.Background(), result.Post.ID)
+	require.NoError(t, err)
+	require.Len(t, postImages, 2)
+
+	imageIDs := make([]int64, len(postImages))
+	for i, img := range postImages {
+		imageIDs[i] = img.ID
+	}
+	require.ElementsMatch(t, []int64{image1.ID, image2.ID}, imageIDs)
 }

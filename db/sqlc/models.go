@@ -28,7 +28,6 @@ type Post struct {
 	Content     string    `json:"content"`
 	UserID      int64     `json:"user_id"`
 	Username    string    `json:"username"`
-	Images      []string  `json:"images"`
 	Url         string    `json:"url"`
 	CreatedAt   time.Time `json:"created_at"`
 	ChangedAt   time.Time `json:"changed_at"`

@@ -8,8 +8,6 @@ package db
 import (
 	"context"
 	"database/sql"
-
-	"github.com/lib/pq"
 )
 
 const createPostTaxonomy = `-- name: CreatePostTaxonomy :one
@@ -225,7 +223,7 @@ func (q *Queries) GetTaxonomyPostCount(ctx context.Context, taxonomyID int64) (i
 }
 
 const getTaxonomyPosts = `-- name: GetTaxonomyPosts :many
-SELECT p.id, p.title, p.description, p.content, p.user_id, p.username, p.images, p.url, p.created_at, p.changed_at FROM posts p
+SELECT p.id, p.title, p.description, p.content, p.user_id, p.username, p.url, p.created_at, p.changed_at FROM posts p
 JOIN posts_taxonomies pt ON p.id = pt.post_id
 WHERE pt.taxonomy_id = $1
 ORDER BY p.created_at DESC
@@ -255,7 +253,6 @@ func (q *Queries) GetTaxonomyPosts(ctx context.Context, arg GetTaxonomyPostsPara
 			&i.Content,
 			&i.UserID,
 			&i.Username,
-			pq.Array(&i.Images),
 			&i.Url,
 			&i.CreatedAt,
 			&i.ChangedAt,

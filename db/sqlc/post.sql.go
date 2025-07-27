@@ -7,8 +7,6 @@ package db
 
 import (
 	"context"
-
-	"github.com/lib/pq"
 )
 
 const createPosts = `-- name: CreatePosts :one
@@ -18,21 +16,19 @@ INSERT INTO posts (
     user_id,
     username,
     content,
-    url,
-    images
+    url
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7
-) RETURNING id, title, description, content, user_id, username, images, url, created_at, changed_at
+    $1, $2, $3, $4, $5, $6
+) RETURNING id, title, description, content, user_id, username, url, created_at, changed_at
 `
 
 type CreatePostsParams struct {
-	Title       string   `json:"title"`
-	Description string   `json:"description"`
-	UserID      int64    `json:"user_id"`
-	Username    string   `json:"username"`
-	Content     string   `json:"content"`
-	Url         string   `json:"url"`
-	Images      []string `json:"images"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	UserID      int64  `json:"user_id"`
+	Username    string `json:"username"`
+	Content     string `json:"content"`
+	Url         string `json:"url"`
 }
 
 func (q *Queries) CreatePosts(ctx context.Context, arg CreatePostsParams) (Post, error) {
@@ -43,7 +39,6 @@ func (q *Queries) CreatePosts(ctx context.Context, arg CreatePostsParams) (Post,
 		arg.Username,
 		arg.Content,
 		arg.Url,
-		pq.Array(arg.Images),
 	)
 	var i Post
 	err := row.Scan(
@@ -53,7 +48,6 @@ func (q *Queries) CreatePosts(ctx context.Context, arg CreatePostsParams) (Post,
 		&i.Content,
 		&i.UserID,
 		&i.Username,
-		pq.Array(&i.Images),
 		&i.Url,
 		&i.CreatedAt,
 		&i.ChangedAt,
@@ -105,7 +99,7 @@ func (q *Queries) DeleteUserPost(ctx context.Context, postID int64) error {
 }
 
 const getPost = `-- name: GetPost :one
-SELECT id, title, description, content, user_id, username, images, url, created_at, changed_at FROM posts 
+SELECT id, title, description, content, user_id, username, url, created_at, changed_at FROM posts 
 WHERE id = $1 LIMIT 1
 `
 
@@ -119,7 +113,6 @@ func (q *Queries) GetPost(ctx context.Context, id int64) (Post, error) {
 		&i.Content,
 		&i.UserID,
 		&i.Username,
-		pq.Array(&i.Images),
 		&i.Url,
 		&i.CreatedAt,
 		&i.ChangedAt,
@@ -128,7 +121,7 @@ func (q *Queries) GetPost(ctx context.Context, id int64) (Post, error) {
 }
 
 const listPosts = `-- name: ListPosts :many
-SELECT id, title, description, content, user_id, username, images, url, created_at, changed_at FROM posts 
+SELECT id, title, description, content, user_id, username, url, created_at, changed_at FROM posts 
 ORDER BY id DESC
 LIMIT $1
 OFFSET $2
@@ -155,7 +148,6 @@ func (q *Queries) ListPosts(ctx context.Context, arg ListPostsParams) ([]Post, e
 			&i.Content,
 			&i.UserID,
 			&i.Username,
-			pq.Array(&i.Images),
 			&i.Url,
 			&i.CreatedAt,
 			&i.ChangedAt,
@@ -180,22 +172,20 @@ SET title = COALESCE($1, title),
     user_id = COALESCE($3, user_id),
     username = COALESCE($4, username),
     content = COALESCE($5, content),
-    images = COALESCE($6, images),
-    url = COALESCE($7, url),
+    url = COALESCE($6, url),
     changed_at = now()
-WHERE id = $8
-RETURNING id, title, description, content, user_id, username, images, url, created_at, changed_at
+WHERE id = $7
+RETURNING id, title, description, content, user_id, username, url, created_at, changed_at
 `
 
 type UpdatePostParams struct {
-	Title       string   `json:"title"`
-	Description string   `json:"description"`
-	UserID      int64    `json:"user_id"`
-	Username    string   `json:"username"`
-	Content     string   `json:"content"`
-	Images      []string `json:"images"`
-	Url         string   `json:"url"`
-	ID          int64    `json:"id"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	UserID      int64  `json:"user_id"`
+	Username    string `json:"username"`
+	Content     string `json:"content"`
+	Url         string `json:"url"`
+	ID          int64  `json:"id"`
 }
 
 func (q *Queries) UpdatePost(ctx context.Context, arg UpdatePostParams) (Post, error) {
@@ -205,7 +195,6 @@ func (q *Queries) UpdatePost(ctx context.Context, arg UpdatePostParams) (Post, e
 		arg.UserID,
 		arg.Username,
 		arg.Content,
-		pq.Array(arg.Images),
 		arg.Url,
 		arg.ID,
 	)
@@ -217,7 +206,6 @@ func (q *Queries) UpdatePost(ctx context.Context, arg UpdatePostParams) (Post, e
 		&i.Content,
 		&i.UserID,
 		&i.Username,
-		pq.Array(&i.Images),
 		&i.Url,
 		&i.CreatedAt,
 		&i.ChangedAt,

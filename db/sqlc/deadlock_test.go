@@ -26,9 +26,12 @@ func TestConcurrentUserUpdates_Deadlock(t *testing.T) {
 
 		_, err := testStore.UpdateUserTx(context.Background(), UpdateUserTxParams{
 			UpdateUserParams: UpdateUserParams{
-				ID:       user1.ID,
-				Username: fmt.Sprintf("updated1_%d", time.Now().UnixNano()),
-				Email:    fmt.Sprintf("test1_%d@example.com", time.Now().UnixNano()),
+				ID:             user1.ID,
+				Username:       fmt.Sprintf("updated1_%d", time.Now().UnixNano()),
+				Email:          fmt.Sprintf("test1_%d@example.com", time.Now().UnixNano()),
+				FullName:       user1.FullName,
+				Role:           user1.Role,
+				HashedPassword: user1.HashedPassword,
 			},
 			CheckUniqueness: true,
 		})
@@ -39,9 +42,12 @@ func TestConcurrentUserUpdates_Deadlock(t *testing.T) {
 
 		_, err = testStore.UpdateUserTx(context.Background(), UpdateUserTxParams{
 			UpdateUserParams: UpdateUserParams{
-				ID:       user2.ID,
-				Username: fmt.Sprintf("updated2_%d", time.Now().UnixNano()),
-				Email:    fmt.Sprintf("test2_%d@example.com", time.Now().UnixNano()),
+				ID:             user2.ID,
+				Username:       fmt.Sprintf("updated2_%d", time.Now().UnixNano()),
+				Email:          fmt.Sprintf("test2_%d@example.com", time.Now().UnixNano()),
+				FullName:       user2.FullName,
+				HashedPassword: user2.HashedPassword,
+				Role:           user2.Role,
 			},
 			CheckUniqueness: true,
 		})
@@ -58,9 +64,12 @@ func TestConcurrentUserUpdates_Deadlock(t *testing.T) {
 
 		_, err := testStore.UpdateUserTx(context.Background(), UpdateUserTxParams{
 			UpdateUserParams: UpdateUserParams{
-				ID:       user2.ID,
-				Username: fmt.Sprintf("updated3_%d", time.Now().UnixNano()),
-				Email:    fmt.Sprintf("test3_%d@example.com", time.Now().UnixNano()),
+				ID:             user2.ID,
+				Username:       fmt.Sprintf("updated3_%d", time.Now().UnixNano()),
+				Email:          fmt.Sprintf("test3_%d@example.com", time.Now().UnixNano()),
+				FullName:       user2.FullName,
+				Role:           user2.Role,
+				HashedPassword: user2.HashedPassword,
 			},
 			CheckUniqueness: true,
 		})
@@ -71,9 +80,12 @@ func TestConcurrentUserUpdates_Deadlock(t *testing.T) {
 
 		_, err = testStore.UpdateUserTx(context.Background(), UpdateUserTxParams{
 			UpdateUserParams: UpdateUserParams{
-				ID:       user1.ID,
-				Username: fmt.Sprintf("updated4_%d", time.Now().UnixNano()),
-				Email:    fmt.Sprintf("test4_%d@example.com", time.Now().UnixNano()),
+				ID:             user1.ID,
+				Username:       fmt.Sprintf("updated4_%d", time.Now().UnixNano()),
+				Email:          fmt.Sprintf("test4_%d@example.com", time.Now().UnixNano()),
+				FullName:       user1.FullName,
+				HashedPassword: user1.HashedPassword,
+				Role:           user1.Role,
 			},
 			CheckUniqueness: true,
 		})
@@ -138,7 +150,6 @@ func TestConcurrentPostOperations_Deadlock(t *testing.T) {
 					UserID:      user1.ID,
 					Username:    user1.Username,
 					Url:         fmt.Sprintf("https://example.com/posts/%s", gofakeit.UUID()),
-					Images:      []string{gofakeit.ImageURL(800, 600)},
 				},
 				AuthorIDs: []int64{user1.ID},
 			})
@@ -156,7 +167,6 @@ func TestConcurrentPostOperations_Deadlock(t *testing.T) {
 				UserID:      user1.ID,
 				Username:    user1.Username,
 				Url:         post1.Post.Url,
-				Images:      post1.Post.Images,
 			})
 			if err != nil {
 				errChan <- fmt.Errorf("update post: %w", err)
@@ -230,7 +240,6 @@ func TestHighConcurrencyStress(t *testing.T) {
 							UserID:      user.ID,
 							Username:    user.Username,
 							Url:         fmt.Sprintf("https://example.com/posts/%d-%d", workerID, op),
-							Images:      []string{gofakeit.ImageURL(800, 600)},
 						},
 						AuthorIDs: []int64{user.ID},
 					})
@@ -425,7 +434,6 @@ func TestDeadlockWithPostsAndUsers(t *testing.T) {
 					UserID:      post1.Post.UserID,
 					Username:    post1.Post.Username,
 					Url:         post1.Post.Url,
-					Images:      post1.Post.Images,
 				})
 				if err != nil {
 					return err
@@ -471,7 +479,6 @@ func TestDeadlockWithPostsAndUsers(t *testing.T) {
 					UserID:      post1.Post.UserID,
 					Username:    post1.Post.Username,
 					Url:         post1.Post.Url,
-					Images:      post1.Post.Images,
 				})
 				return err
 			})

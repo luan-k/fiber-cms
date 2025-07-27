@@ -5,10 +5,9 @@ INSERT INTO posts (
     user_id,
     username,
     content,
-    url,
-    images
+    url
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7
+    $1, $2, $3, $4, $5, $6
 ) RETURNING *;
 
 -- name: CreateUserPost :one
@@ -37,10 +36,9 @@ SET title = COALESCE($1, title),
     user_id = COALESCE($3, user_id),
     username = COALESCE($4, username),
     content = COALESCE($5, content),
-    images = COALESCE($6, images),
-    url = COALESCE($7, url),
+    url = COALESCE($6, url),
     changed_at = now()
-WHERE id = $8
+WHERE id = $7
 RETURNING *;
 
 -- name: DeletePost :exec

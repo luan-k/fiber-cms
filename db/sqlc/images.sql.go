@@ -318,6 +318,145 @@ func (q *Queries) GetPostImageCount(ctx context.Context, postID int64) (int64, e
 	return count, err
 }
 
+const getPostWithImages = `-- name: GetPostWithImages :one
+SELECT 
+    p.id, p.title, p.description, p.content, p.user_id, p.username, p.url, p.created_at, p.changed_at,
+    COALESCE(
+        json_agg(
+            json_build_object(
+                'id', i.id,
+                'name', i.name,
+                'description', i.description,
+                'alt', i.alt,
+                'image_path', i.image_path,
+                'user_id', i.user_id,
+                'created_at', i.created_at,
+                'changed_at', i.changed_at,
+                'order', pi."order"
+            ) ORDER BY pi."order", i.created_at
+        ) FILTER (WHERE i.id IS NOT NULL),
+        '[]'::json
+    ) as images
+FROM posts p
+LEFT JOIN post_images pi ON p.id = pi.post_id
+LEFT JOIN images i ON pi.image_id = i.id
+WHERE p.id = $1
+GROUP BY p.id, p.title, p.description, p.content, p.user_id, p.username, p.url, p.created_at, p.changed_at
+`
+
+type GetPostWithImagesRow struct {
+	ID          int64       `json:"id"`
+	Title       string      `json:"title"`
+	Description string      `json:"description"`
+	Content     string      `json:"content"`
+	UserID      int64       `json:"user_id"`
+	Username    string      `json:"username"`
+	Url         string      `json:"url"`
+	CreatedAt   time.Time   `json:"created_at"`
+	ChangedAt   time.Time   `json:"changed_at"`
+	Images      interface{} `json:"images"`
+}
+
+func (q *Queries) GetPostWithImages(ctx context.Context, id int64) (GetPostWithImagesRow, error) {
+	row := q.db.QueryRowContext(ctx, getPostWithImages, id)
+	var i GetPostWithImagesRow
+	err := row.Scan(
+		&i.ID,
+		&i.Title,
+		&i.Description,
+		&i.Content,
+		&i.UserID,
+		&i.Username,
+		&i.Url,
+		&i.CreatedAt,
+		&i.ChangedAt,
+		&i.Images,
+	)
+	return i, err
+}
+
+const getPostsByUserWithImages = `-- name: GetPostsByUserWithImages :many
+SELECT 
+    p.id, p.title, p.description, p.content, p.user_id, p.username, p.url, p.created_at, p.changed_at,
+    COALESCE(
+        json_agg(
+            json_build_object(
+                'id', i.id,
+                'name', i.name,
+                'description', i.description,
+                'alt', i.alt,
+                'image_path', i.image_path,
+                'user_id', i.user_id,
+                'created_at', i.created_at,
+                'changed_at', i.changed_at,
+                'order', pi."order"
+            ) ORDER BY pi."order", i.created_at
+        ) FILTER (WHERE i.id IS NOT NULL),
+        '[]'::json
+    ) as images
+FROM posts p
+LEFT JOIN post_images pi ON p.id = pi.post_id
+LEFT JOIN images i ON pi.image_id = i.id
+WHERE p.user_id = $1
+GROUP BY p.id, p.title, p.description, p.content, p.user_id, p.username, p.url, p.created_at, p.changed_at
+ORDER BY p.created_at DESC
+LIMIT $2
+OFFSET $3
+`
+
+type GetPostsByUserWithImagesParams struct {
+	UserID int64 `json:"user_id"`
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+type GetPostsByUserWithImagesRow struct {
+	ID          int64       `json:"id"`
+	Title       string      `json:"title"`
+	Description string      `json:"description"`
+	Content     string      `json:"content"`
+	UserID      int64       `json:"user_id"`
+	Username    string      `json:"username"`
+	Url         string      `json:"url"`
+	CreatedAt   time.Time   `json:"created_at"`
+	ChangedAt   time.Time   `json:"changed_at"`
+	Images      interface{} `json:"images"`
+}
+
+func (q *Queries) GetPostsByUserWithImages(ctx context.Context, arg GetPostsByUserWithImagesParams) ([]GetPostsByUserWithImagesRow, error) {
+	rows, err := q.db.QueryContext(ctx, getPostsByUserWithImages, arg.UserID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetPostsByUserWithImagesRow{}
+	for rows.Next() {
+		var i GetPostsByUserWithImagesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Title,
+			&i.Description,
+			&i.Content,
+			&i.UserID,
+			&i.Username,
+			&i.Url,
+			&i.CreatedAt,
+			&i.ChangedAt,
+			&i.Images,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getUserImageCount = `-- name: GetUserImageCount :one
 SELECT COUNT(*) FROM images
 WHERE user_id = $1
@@ -422,6 +561,86 @@ func (q *Queries) ListImagesWithPostCount(ctx context.Context, arg ListImagesWit
 			&i.CreatedAt,
 			&i.ChangedAt,
 			&i.PostCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPostsWithImages = `-- name: ListPostsWithImages :many
+SELECT 
+    p.id, p.title, p.description, p.content, p.user_id, p.username, p.url, p.created_at, p.changed_at,
+    COALESCE(
+        json_agg(
+            json_build_object(
+                'id', i.id,
+                'name', i.name,
+                'description', i.description,
+                'alt', i.alt,
+                'image_path', i.image_path,
+                'user_id', i.user_id,
+                'created_at', i.created_at,
+                'changed_at', i.changed_at,
+                'order', pi."order"
+            ) ORDER BY pi."order", i.created_at
+        ) FILTER (WHERE i.id IS NOT NULL),
+        '[]'::json
+    ) as images
+FROM posts p
+LEFT JOIN post_images pi ON p.id = pi.post_id
+LEFT JOIN images i ON pi.image_id = i.id
+GROUP BY p.id, p.title, p.description, p.content, p.user_id, p.username, p.url, p.created_at, p.changed_at
+ORDER BY p.created_at DESC
+LIMIT $1
+OFFSET $2
+`
+
+type ListPostsWithImagesParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+type ListPostsWithImagesRow struct {
+	ID          int64       `json:"id"`
+	Title       string      `json:"title"`
+	Description string      `json:"description"`
+	Content     string      `json:"content"`
+	UserID      int64       `json:"user_id"`
+	Username    string      `json:"username"`
+	Url         string      `json:"url"`
+	CreatedAt   time.Time   `json:"created_at"`
+	ChangedAt   time.Time   `json:"changed_at"`
+	Images      interface{} `json:"images"`
+}
+
+func (q *Queries) ListPostsWithImages(ctx context.Context, arg ListPostsWithImagesParams) ([]ListPostsWithImagesRow, error) {
+	rows, err := q.db.QueryContext(ctx, listPostsWithImages, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListPostsWithImagesRow{}
+	for rows.Next() {
+		var i ListPostsWithImagesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Title,
+			&i.Description,
+			&i.Content,
+			&i.UserID,
+			&i.Username,
+			&i.Url,
+			&i.CreatedAt,
+			&i.ChangedAt,
+			&i.Images,
 		); err != nil {
 			return nil, err
 		}
