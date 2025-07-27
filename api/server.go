@@ -65,6 +65,8 @@ func (server *Server) setupRoutes() {
 	auth := v1.Group("/auth")
 	auth.Post("/register", server.register)
 	auth.Post("/login", server.login)
+	v1.Get("/posts", server.getPosts)
+	v1.Get("/posts/:id", server.getPostByID)
 }
 
 func (server *Server) healthCheck(c *fiber.Ctx) error {
