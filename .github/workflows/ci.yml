@@ -48,4 +48,9 @@ jobs:
         run: make migrateup
 
       - name: Test
+        env:
+          DB_DRIVER: postgres
+          DB_SOURCE: postgresql://root:secret@localhost:5432/fiber_cms_test?sslmode=disable
+          SERVER_ADDRESS: :8080
+          API_PORT: :8080
         run: make test
