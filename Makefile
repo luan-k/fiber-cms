@@ -22,4 +22,7 @@ server:
 test:
 	go test -v -cover ./...
 
-.PHONY: createdb dropdb postgres migrateup migratedown sqlc test
+mock:
+	mockgen -package mockdb -destination db/mock/store.go github.com/luan-k/fiber-cms/db/sqlc Store
+
+.PHONY: createdb dropdb postgres migrateup migratedown sqlc test mock

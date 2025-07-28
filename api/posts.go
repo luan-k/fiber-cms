@@ -9,8 +9,8 @@ import (
 )
 
 type getPostsRequest struct {
-	Limit  int32 `form:"limit" binding:"required,min=1,max=100"`
-	Offset int32 `form:"offset" binding:"required,min=0"`
+	Limit  int32 `form:"limit" binding:"min=1"`
+	Offset int32 `form:"offset" binding:"min=0"`
 }
 
 func (server *Server) getPosts(c *gin.Context) {
@@ -18,6 +18,14 @@ func (server *Server) getPosts(c *gin.Context) {
 	if err := c.ShouldBindQuery(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	}
+
+	if req.Limit == 0 {
+		req.Limit = 10
+	}
+
+	if req.Limit > 100 {
+		req.Limit = 100
 	}
 
 	posts, err := server.store.ListPosts(c.Request.Context(), db.ListPostsParams{
