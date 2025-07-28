@@ -16,9 +16,18 @@ func LoadConfig(path string) (config Config, err error) {
 
 	viper.AutomaticEnv()
 
-	err = viper.ReadInConfig()
-	if err != nil {
-		return
+	viper.SetDefault("DB_DRIVER", "postgres")
+	viper.SetDefault("DB_SOURCE", "postgresql://root:secret@localhost:5432/fiber_cms_test?sslmode=disable")
+	viper.SetDefault("SERVER_ADDRESS", ":8080")
+	viper.SetDefault("API_PORT", ":8080")
+
+	if err = viper.ReadInConfig(); err != nil {
+
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+
+		} else {
+			return
+		}
 	}
 
 	err = viper.Unmarshal(&config)
