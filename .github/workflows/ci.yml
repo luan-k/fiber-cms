@@ -59,7 +59,7 @@ jobs:
       - name: Test
         env:
           DB_DRIVER: postgres
-          DB_SOURCE: postgresql://root:secret@localhost:5432/fiber_cms_test?sslmode=disable
+          DB_SOURCE: postgresql://root:secret@localhost:5432/fiber_cms?sslmode=disable
           SERVER_ADDRESS: 0.0.0.0:8080
           API_PORT: :8080
         run: make test
