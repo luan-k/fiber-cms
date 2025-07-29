@@ -36,12 +36,23 @@ func (server *Server) setupRoutes() {
 
 	router.GET("/health", server.healthCheck)
 
+	// todo: implement auth middleware
 	auth := v1.Group("/auth")
 	auth.POST("/register", server.register)
 	auth.POST("/login", server.login)
 
-	v1.GET("/posts", server.getPosts)
-	v1.GET("/posts/:id", server.getPostByID)
+	users := v1.Group("/users")
+	users.POST("", server.createUser)
+	users.GET("", server.getUsers) // todo: implement content limiter
+	users.GET("/:id", server.getUserByID)
+	users.GET("/username/:username", server.getUserByUsername)
+	users.GET("/email/:email", server.getUserByEmail)
+	users.PUT("/:id", server.updateUser)
+	users.DELETE("/:id", server.deleteUser)
+
+	posts := v1.Group("/posts")
+	posts.GET("", server.getPosts)
+	posts.GET("/:id", server.getPostByID)
 
 	server.router = router
 }
@@ -50,6 +61,7 @@ func (server *Server) healthCheck(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "ok",
 		"message": "Gin CMS API is running",
+		"version": "v0.0.1",
 	})
 }
 
