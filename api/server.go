@@ -42,21 +42,21 @@ func (server *Server) setupRoutes() {
 	auth.POST("/login", server.login)
 
 	users := v1.Group("/users")
-	users.POST("", server.createUser)
-	users.GET("", server.getUsers) // todo: implement content limiter
-	users.GET("/:id", server.getUserByID)
-	users.GET("/username/:username", server.getUserByUsername)
-	users.GET("/email/:email", server.getUserByEmail)
-	users.PUT("/:id", server.updateUser)
-	users.DELETE("/:id", server.deleteUser)
+	users.POST("", server.createUser)                          // POST /api/v1/users
+	users.GET("", server.getUsers)                             // implement content limiter // GET /api/v1/users
+	users.GET("/:id", server.getUserByID)                      // GET /api/v1/users/:id
+	users.GET("/username/:username", server.getUserByUsername) // GET /api/v1/users/username/:username
+	users.GET("/email/:email", server.getUserByEmail)          // GET /api/v1/users/email/:email
+	users.PUT("/:id", server.updateUser)                       // PUT /api/v1/users/:id
+	users.DELETE("/:id", server.deleteUser)                    // DELETE /api/v1/users/:id
 
 	posts := v1.Group("/posts")
-	posts.POST("", server.createPost)       // POST /api/v1/posts
-	posts.GET("", server.getPosts)          // GET /api/v1/posts
-	posts.GET("/:id", server.getPostByID)   // GET /api/v1/posts/:id
-	posts.PUT("/:id", server.updatePost)    // PUT /api/v1/posts/:id
-	posts.DELETE("/:id", server.deletePost) // DELETE /api/v1/posts/:id
-	posts.GET("/user/:id", server.getPostsByUser)
+	posts.POST("", server.createPost)                      // POST /api/v1/posts
+	posts.GET("", server.getPosts)                         // GET /api/v1/posts
+	posts.GET("/:id", server.getPostByID)                  // GET /api/v1/posts/:id
+	posts.PUT("/:id", server.updatePost)                   // PUT /api/v1/posts/:id
+	posts.DELETE("/:id", server.deletePost)                // DELETE /api/v1/posts/:id
+	posts.GET("/user/:id", server.getPostsByUser)          // GET /api/v1/posts/user/:id
 	posts.GET("/:id/taxonomies", server.getPostTaxonomies) // GET /api/v1/posts/:id/taxonomies
 
 	taxonomies := v1.Group("/taxonomies")
@@ -69,6 +69,17 @@ func (server *Server) setupRoutes() {
 	taxonomies.PUT("/:id", server.updateTaxonomy)           // PUT /api/v1/taxonomies/:id
 	taxonomies.DELETE("/:id", server.deleteTaxonomy)        // DELETE /api/v1/taxonomies/:id
 	taxonomies.GET("/:id/posts", server.getTaxonomyPosts)   // GET /api/v1/taxonomies/:id/posts
+
+	media := v1.Group("/media")
+	media.POST("", server.createMedia)            // POST /api/v1/media
+	media.GET("", server.getMedia)                // GET /api/v1/media
+	media.GET("/popular", server.getPopularMedia) // GET /api/v1/media/popular
+	media.GET("/search", server.searchMedia)      // GET /api/v1/media/search
+	media.GET("/:id", server.getMediaByID)        // GET /api/v1/media/:id
+	media.PUT("/:id", server.updateMedia)         // PUT /api/v1/media/:id
+	media.DELETE("/:id", server.deleteMedia)      // DELETE /api/v1/media/:id
+	media.GET("/user/:id", server.getMediaByUser) // GET /api/v1/media/user/:id
+	media.GET("/post/:id", server.getMediaByPost) // GET /api/v1/media/post/:id
 
 	server.router = router
 }
