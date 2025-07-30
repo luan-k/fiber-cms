@@ -12,8 +12,8 @@ import (
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/gin-gonic/gin"
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/mock/gomock"
 
 	mockdb "github.com/luan-k/fiber-cms/db/mock"
 	db "github.com/luan-k/fiber-cms/db/sqlc"
@@ -145,14 +145,14 @@ func TestCreatePostAPI(t *testing.T) {
 			},
 		},
 		{
-			name: "WithImages",
+			name: "WithMedia",
 			body: gin.H{
 				"title":       post.Title,
 				"content":     post.Content,
 				"description": post.Description,
 				"url":         post.Url,
 				"author_ids":  []int64{user.ID},
-				"image_ids":   []int64{1, 2},
+				"media_ids":   []int64{1, 2},
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
@@ -161,16 +161,16 @@ func TestCreatePostAPI(t *testing.T) {
 					Return(user, nil)
 
 				store.EXPECT().
-					CreatePostWithImagesTx(gomock.Any(), gomock.Any()).
+					CreatePostWithMediaTx(gomock.Any(), gomock.Any()).
 					Times(1).
-					Return(db.CreatePostWithImagesTxResult{
+					Return(db.CreatePostWithMediaTxResult{
 						Post: post,
 						UserPosts: []db.UserPost{
 							{PostID: post.ID, UserID: user.ID, Order: 0},
 						},
-						PostImages: []db.PostImage{
-							{PostID: post.ID, ImageID: 1, Order: 0},
-							{PostID: post.ID, ImageID: 2, Order: 1},
+						PostMedia: []db.PostMedium{
+							{PostID: post.ID, MediaID: 1, Order: 0},
+							{PostID: post.ID, MediaID: 2, Order: 1},
 						},
 					}, nil)
 			},
@@ -576,11 +576,11 @@ func TestDeletePostAPI(t *testing.T) {
 func TestGetPostsByUserAPI(t *testing.T) {
 	user := randomUserForPosts()
 	n := 3
-	posts := make([]db.GetPostsByUserWithImagesRow, n)
+	posts := make([]db.GetPostsByUserWithMediaRow, n)
 	for i := 0; i < n; i++ {
 		post := randomPost(user)
 		post.ID = int64(i + 1)
-		posts[i] = db.GetPostsByUserWithImagesRow{
+		posts[i] = db.GetPostsByUserWithMediaRow{
 			ID:          post.ID,
 			Title:       post.Title,
 			Content:     post.Content,
@@ -590,7 +590,7 @@ func TestGetPostsByUserAPI(t *testing.T) {
 			Url:         post.Url,
 			CreatedAt:   post.CreatedAt,
 			ChangedAt:   post.ChangedAt,
-			Images:      []byte(`[]`),
+			Media:       []byte(`[]`),
 		}
 	}
 
@@ -612,7 +612,7 @@ func TestGetPostsByUserAPI(t *testing.T) {
 					Return(user, nil)
 
 				store.EXPECT().
-					GetPostsByUserWithImages(gomock.Any(), db.GetPostsByUserWithImagesParams{
+					GetPostsByUserWithMedia(gomock.Any(), db.GetPostsByUserWithMediaParams{
 						UserID: user.ID,
 						Limit:  10,
 						Offset: 0,

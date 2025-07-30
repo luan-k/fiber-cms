@@ -160,16 +160,16 @@ func TestUpdatePost(t *testing.T) {
 	require.Equal(t, "", updatedPost2.Description)
 }
 
-func TestCreatePostWithImages(t *testing.T) {
+func TestCreatePostWithMedia(t *testing.T) {
 	user := createTestUser(t)
 
-	_, image1 := createTestImage(t)
-	_, image2 := createTestImage(t)
+	_, media1 := createTestMedia(t)
+	_, media2 := createTestMedia(t)
 
 	title := gofakeit.Sentence(3)
 	slug := strings.ToLower(strings.ReplaceAll(title, " ", "-"))
 
-	arg := CreatePostWithImagesTxParams{
+	arg := CreatePostWithMediaTxParams{
 		CreatePostsParams: CreatePostsParams{
 			Title:       title,
 			Content:     gofakeit.Paragraph(3, 5, 10, " "),
@@ -179,22 +179,22 @@ func TestCreatePostWithImages(t *testing.T) {
 			Url:         fmt.Sprintf("https://example.com/posts/%s", slug),
 		},
 		AuthorIDs: []int64{user.ID},
-		ImageIDs:  []int64{image1.ID, image2.ID},
+		MediaIDs:  []int64{media1.ID, media2.ID},
 	}
 
-	result, err := testStore.CreatePostWithImagesTx(context.Background(), arg)
+	result, err := testStore.CreatePostWithMediaTx(context.Background(), arg)
 	require.NoError(t, err)
 	require.NotEmpty(t, result.Post)
 	require.Len(t, result.UserPosts, 1)
-	require.Len(t, result.PostImages, 2)
+	require.Len(t, result.PostMedia, 2)
 
-	postImages, err := testQueries.GetImagesByPost(context.Background(), result.Post.ID)
+	postMedia, err := testQueries.GetMediaByPost(context.Background(), result.Post.ID)
 	require.NoError(t, err)
-	require.Len(t, postImages, 2)
+	require.Len(t, postMedia, 2)
 
-	imageIDs := make([]int64, len(postImages))
-	for i, img := range postImages {
-		imageIDs[i] = img.ID
+	mediaIDs := make([]int64, len(postMedia))
+	for i, media := range postMedia {
+		mediaIDs[i] = media.ID
 	}
-	require.ElementsMatch(t, []int64{image1.ID, image2.ID}, imageIDs)
+	require.ElementsMatch(t, []int64{media1.ID, media2.ID}, mediaIDs)
 }

@@ -20,10 +20,10 @@ type Store interface {
 	UpdatePostTaxonomiesTx(ctx context.Context, arg UpdatePostTaxonomiesTxParams) error
 	CreateTaxonomyAndLinkTx(ctx context.Context, arg CreateTaxonomyAndLinkTxParams) (CreateTaxonomyAndLinkTxResult, error)
 
-	CreatePostWithImagesTx(ctx context.Context, arg CreatePostWithImagesTxParams) (CreatePostWithImagesTxResult, error)
-	DeleteImageTx(ctx context.Context, arg DeleteImageTxParams) error
-	UpdatePostImagesTx(ctx context.Context, arg UpdatePostImagesTxParams) error
-	CreateImageAndLinkTx(ctx context.Context, arg CreateImageAndLinkTxParams) (CreateImageAndLinkTxResult, error)
+	CreatePostWithMediaTx(ctx context.Context, arg CreatePostWithMediaTxParams) (CreatePostWithMediaTxResult, error)
+	DeleteMediaTx(ctx context.Context, arg DeleteMediaTxParams) error
+	UpdatePostMediaTx(ctx context.Context, arg UpdatePostMediaTxParams) error
+	CreateMediaAndLinkTx(ctx context.Context, arg CreateMediaAndLinkTxParams) (CreateMediaAndLinkTxResult, error)
 
 	ExecTx(ctx context.Context, fn func(*Queries) error) error
 }
@@ -159,7 +159,7 @@ func (store *SQLStore) DeleteUserTx(ctx context.Context, id int64) error {
 			return err
 		}
 
-		err = q.DeleteImagesByUserID(ctx, id)
+		err = q.DeleteMediaByUserID(ctx, id)
 		if err != nil {
 			return err
 		}
@@ -252,7 +252,7 @@ func (store *SQLStore) DeleteUserWithTransferTx(ctx context.Context, arg DeleteU
 			return err
 		}
 
-		err = q.TransferImagesToUser(ctx, TransferImagesToUserParams{
+		err = q.TransferMediaToUser(ctx, TransferMediaToUserParams{
 			UserID:   arg.UserID,
 			UserID_2: arg.TransferToID,
 		})
@@ -460,45 +460,45 @@ func (store *SQLStore) CreateTaxonomyAndLinkTx(ctx context.Context, arg CreateTa
 	return result, err
 }
 
-type CreatePostWithImagesTxParams struct {
+type CreatePostWithMediaTxParams struct {
 	CreatePostsParams
 	AuthorIDs []int64
-	ImageIDs  []int64
+	MediaIDs  []int64
 }
 
-type CreatePostWithImagesTxResult struct {
-	Post       Post        `json:"post"`
-	UserPosts  []UserPost  `json:"user_posts"`
-	PostImages []PostImage `json:"post_images"`
+type CreatePostWithMediaTxResult struct {
+	Post      Post         `json:"post"`
+	UserPosts []UserPost   `json:"user_posts"`
+	PostMedia []PostMedium `json:"post_media"`
 }
 
-type DeleteImageTxParams struct {
-	ImageID int64
+type DeleteMediaTxParams struct {
+	MediaID int64
 	UserID  int64
 }
 
-type UpdatePostImagesTxParams struct {
+type UpdatePostMediaTxParams struct {
 	PostID   int64
-	ImageIDs []int64
+	MediaIDs []int64
 }
 
-type CreateImageAndLinkTxParams struct {
+type CreateMediaAndLinkTxParams struct {
 	Name        string
 	Description string
 	Alt         string
-	ImagePath   string
+	MediaPath   string
 	UserID      int64
 	PostID      int64
 	Order       int32
 }
 
-type CreateImageAndLinkTxResult struct {
-	Image     Image     `json:"image"`
-	PostImage PostImage `json:"post_image"`
+type CreateMediaAndLinkTxResult struct {
+	Media     Medium     `json:"media"`
+	PostMedia PostMedium `json:"post_media"`
 }
 
-func (store *SQLStore) CreatePostWithImagesTx(ctx context.Context, arg CreatePostWithImagesTxParams) (CreatePostWithImagesTxResult, error) {
-	var result CreatePostWithImagesTxResult
+func (store *SQLStore) CreatePostWithMediaTx(ctx context.Context, arg CreatePostWithMediaTxParams) (CreatePostWithMediaTxResult, error) {
+	var result CreatePostWithMediaTxResult
 
 	err := store.ExecTx(ctx, func(q *Queries) error {
 		var err error
@@ -532,22 +532,22 @@ func (store *SQLStore) CreatePostWithImagesTx(ctx context.Context, arg CreatePos
 			}
 		}
 
-		for i, imageID := range arg.ImageIDs {
+		for i, mediaID := range arg.MediaIDs {
 
-			_, err := q.GetImage(ctx, imageID)
+			_, err := q.GetMedia(ctx, mediaID)
 			if err != nil {
-				return fmt.Errorf("image %d not found: %w", imageID, err)
+				return fmt.Errorf("media %d not found: %w", mediaID, err)
 			}
 
-			postImage, err := q.CreatePostImage(ctx, CreatePostImageParams{
+			postMedia, err := q.CreatePostMedia(ctx, CreatePostMediaParams{
 				PostID:  result.Post.ID,
-				ImageID: imageID,
+				MediaID: mediaID,
 				Order:   int32(i),
 			})
 			if err != nil {
 				return err
 			}
-			result.PostImages = append(result.PostImages, postImage)
+			result.PostMedia = append(result.PostMedia, postMedia)
 		}
 
 		return nil
@@ -556,24 +556,24 @@ func (store *SQLStore) CreatePostWithImagesTx(ctx context.Context, arg CreatePos
 	return result, err
 }
 
-func (store *SQLStore) DeleteImageTx(ctx context.Context, arg DeleteImageTxParams) error {
+func (store *SQLStore) DeleteMediaTx(ctx context.Context, arg DeleteMediaTxParams) error {
 	err := store.ExecTx(ctx, func(q *Queries) error {
 
-		image, err := q.GetImage(ctx, arg.ImageID)
+		media, err := q.GetMedia(ctx, arg.MediaID)
 		if err != nil {
 			return err
 		}
 
-		if image.UserID != arg.UserID {
-			return fmt.Errorf("user %d does not own image %d", arg.UserID, arg.ImageID)
+		if media.UserID != arg.UserID {
+			return fmt.Errorf("user %d does not own media %d", arg.UserID, arg.MediaID)
 		}
 
-		err = q.DeleteImagePosts(ctx, arg.ImageID)
+		err = q.DeleteMediaPosts(ctx, arg.MediaID)
 		if err != nil {
 			return err
 		}
 
-		err = q.DeleteImage(ctx, arg.ImageID)
+		err = q.DeleteMedia(ctx, arg.MediaID)
 		if err != nil {
 			return err
 		}
@@ -584,7 +584,7 @@ func (store *SQLStore) DeleteImageTx(ctx context.Context, arg DeleteImageTxParam
 	return err
 }
 
-func (store *SQLStore) UpdatePostImagesTx(ctx context.Context, arg UpdatePostImagesTxParams) error {
+func (store *SQLStore) UpdatePostMediaTx(ctx context.Context, arg UpdatePostMediaTxParams) error {
 	err := store.ExecTx(ctx, func(q *Queries) error {
 
 		_, err := q.GetPost(ctx, arg.PostID)
@@ -592,21 +592,21 @@ func (store *SQLStore) UpdatePostImagesTx(ctx context.Context, arg UpdatePostIma
 			return fmt.Errorf("post %d not found: %w", arg.PostID, err)
 		}
 
-		err = q.DeletePostImages(ctx, arg.PostID)
+		err = q.DeletePostMedias(ctx, arg.PostID)
 		if err != nil {
 			return err
 		}
 
-		for i, imageID := range arg.ImageIDs {
+		for i, mediaID := range arg.MediaIDs {
 
-			_, err := q.GetImage(ctx, imageID)
+			_, err := q.GetMedia(ctx, mediaID)
 			if err != nil {
-				return fmt.Errorf("image %d not found: %w", imageID, err)
+				return fmt.Errorf("media %d not found: %w", mediaID, err)
 			}
 
-			_, err = q.CreatePostImage(ctx, CreatePostImageParams{
+			_, err = q.CreatePostMedia(ctx, CreatePostMediaParams{
 				PostID:  arg.PostID,
-				ImageID: imageID,
+				MediaID: mediaID,
 				Order:   int32(i),
 			})
 			if err != nil {
@@ -620,17 +620,17 @@ func (store *SQLStore) UpdatePostImagesTx(ctx context.Context, arg UpdatePostIma
 	return err
 }
 
-func (store *SQLStore) CreateImageAndLinkTx(ctx context.Context, arg CreateImageAndLinkTxParams) (CreateImageAndLinkTxResult, error) {
-	var result CreateImageAndLinkTxResult
+func (store *SQLStore) CreateMediaAndLinkTx(ctx context.Context, arg CreateMediaAndLinkTxParams) (CreateMediaAndLinkTxResult, error) {
+	var result CreateMediaAndLinkTxResult
 
 	err := store.ExecTx(ctx, func(q *Queries) error {
 		var err error
 
-		result.Image, err = q.CreateImage(ctx, CreateImageParams{
+		result.Media, err = q.CreateMedia(ctx, CreateMediaParams{
 			Name:        arg.Name,
 			Description: arg.Description,
 			Alt:         arg.Alt,
-			ImagePath:   arg.ImagePath,
+			MediaPath:   arg.MediaPath,
 			UserID:      arg.UserID,
 		})
 		if err != nil {
@@ -642,9 +642,9 @@ func (store *SQLStore) CreateImageAndLinkTx(ctx context.Context, arg CreateImage
 			return fmt.Errorf("post %d not found: %w", arg.PostID, err)
 		}
 
-		result.PostImage, err = q.CreatePostImage(ctx, CreatePostImageParams{
+		result.PostMedia, err = q.CreatePostMedia(ctx, CreatePostMediaParams{
 			PostID:  arg.PostID,
-			ImageID: result.Image.ID,
+			MediaID: result.Media.ID,
 			Order:   arg.Order,
 		})
 		if err != nil {

@@ -10,12 +10,12 @@ import (
 	"github.com/google/uuid"
 )
 
-type Image struct {
+type Medium struct {
 	ID          int64     `json:"id"`
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
 	Alt         string    `json:"alt"`
-	ImagePath   string    `json:"image_path"`
+	MediaPath   string    `json:"media_path"`
 	UserID      int64     `json:"user_id"`
 	CreatedAt   time.Time `json:"created_at"`
 	ChangedAt   time.Time `json:"changed_at"`
@@ -33,9 +33,9 @@ type Post struct {
 	ChangedAt   time.Time `json:"changed_at"`
 }
 
-type PostImage struct {
+type PostMedium struct {
 	PostID  int64 `json:"post_id"`
-	ImageID int64 `json:"image_id"`
+	MediaID int64 `json:"media_id"`
 	Order   int32 `json:"order"`
 }
 

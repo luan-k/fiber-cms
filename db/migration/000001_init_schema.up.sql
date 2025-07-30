@@ -49,20 +49,20 @@ CREATE TABLE "sessions" (
   "created_at" timestamptz NOT NULL DEFAULT (now())
 );
 
-CREATE TABLE "images" (
+CREATE TABLE "media" (
   "id" BIGSERIAL PRIMARY KEY,
   "name" varchar NOT NULL,
   "description" varchar NOT NULL,
   "alt" varchar NOT NULL,
-  "image_path" varchar NOT NULL,
+  "media_path" varchar NOT NULL,
   "user_id" bigint NOT NULL,
   "created_at" timestamptz NOT NULL DEFAULT (now()),
   "changed_at" timestamptz NOT NULL DEFAULT '0001-01-01 00:00:00Z'
 );
 
-CREATE TABLE "post_images" (
+CREATE TABLE "post_media" (
   "post_id" bigint NOT NULL,
-  "image_id" bigint NOT NULL,
+  "media_id" bigint NOT NULL,
   "order" int NOT NULL DEFAULT 0
 );
 
@@ -70,7 +70,7 @@ CREATE UNIQUE INDEX "unique_post_user" ON "user_posts" ("post_id", "user_id");
 
 CREATE UNIQUE INDEX "unique_post_taxonomy" ON "posts_taxonomies" ("post_id", "taxonomy_id");
 
-CREATE UNIQUE INDEX "unique_post_image" ON "post_images" ("post_id", "image_id");
+CREATE UNIQUE INDEX "unique_post_media" ON "post_media" ("post_id", "media_id");
 
 ALTER TABLE "posts_taxonomies" ADD FOREIGN KEY ("post_id") REFERENCES "posts" ("id");
 
@@ -82,8 +82,8 @@ ALTER TABLE "posts_taxonomies" ADD FOREIGN KEY ("taxonomy_id") REFERENCES "taxon
 
 ALTER TABLE "sessions" ADD FOREIGN KEY ("username") REFERENCES "users" ("username");
 
-ALTER TABLE "post_images" ADD FOREIGN KEY ("post_id") REFERENCES "posts" ("id");
+ALTER TABLE "post_media" ADD FOREIGN KEY ("post_id") REFERENCES "posts" ("id");
 
-ALTER TABLE "post_images" ADD FOREIGN KEY ("image_id") REFERENCES "images" ("id");
+ALTER TABLE "post_media" ADD FOREIGN KEY ("media_id") REFERENCES "media" ("id");
 
-ALTER TABLE "images" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
+ALTER TABLE "media" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");

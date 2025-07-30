@@ -11,8 +11,8 @@ import (
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/gin-gonic/gin"
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/mock/gomock"
 
 	mockdb "github.com/luan-k/fiber-cms/db/mock"
 	db "github.com/luan-k/fiber-cms/db/sqlc"

@@ -16,7 +16,7 @@ type CreatePostRequest struct {
 	Description string  `json:"description" binding:"required,min=10,max=500"`
 	Url         string  `json:"url" binding:"required,url"`
 	AuthorIDs   []int64 `json:"author_ids" binding:"required,min=1"`
-	ImageIDs    []int64 `json:"image_ids" binding:"omitempty"`
+	MediaIDs    []int64 `json:"media_ids" binding:"omitempty"`
 	TaxonomyIDs []int64 `json:"taxonomy_ids" binding:"omitempty"`
 }
 
@@ -25,7 +25,7 @@ type UpdatePostRequest struct {
 	Content     string  `json:"content" binding:"omitempty,min=10"`
 	Description string  `json:"description" binding:"omitempty,min=10,max=500"`
 	Url         string  `json:"url" binding:"omitempty,url"`
-	ImageIDs    []int64 `json:"image_ids" binding:"omitempty"`
+	MediaIDs    []int64 `json:"media_ids" binding:"omitempty"`
 	TaxonomyIDs []int64 `json:"taxonomy_ids" binding:"omitempty"`
 }
 
@@ -153,7 +153,7 @@ func (server *Server) createPost(c *gin.Context) {
 		Url:         req.Url,
 	}
 
-	if len(req.ImageIDs) > 0 && len(req.TaxonomyIDs) > 0 {
+	if len(req.MediaIDs) > 0 && len(req.TaxonomyIDs) > 0 {
 
 		result, err := server.store.CreatePostTx(c.Request.Context(), db.CreatePostTxParams{
 			CreatePostsParams: createParams,
@@ -167,15 +167,15 @@ func (server *Server) createPost(c *gin.Context) {
 		c.JSON(http.StatusCreated, gin.H{
 			"post": toPostResponse(result.Post),
 		})
-	} else if len(req.ImageIDs) > 0 {
+	} else if len(req.MediaIDs) > 0 {
 
-		result, err := server.store.CreatePostWithImagesTx(c.Request.Context(), db.CreatePostWithImagesTxParams{
+		result, err := server.store.CreatePostWithMediaTx(c.Request.Context(), db.CreatePostWithMediaTxParams{
 			CreatePostsParams: createParams,
 			AuthorIDs:         req.AuthorIDs,
-			ImageIDs:          req.ImageIDs,
+			MediaIDs:          req.MediaIDs,
 		})
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create post with images"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create post with media"})
 			return
 		}
 
@@ -271,13 +271,13 @@ func (server *Server) updatePost(c *gin.Context) {
 		return
 	}
 
-	if req.ImageIDs != nil {
-		err = server.store.UpdatePostImagesTx(c.Request.Context(), db.UpdatePostImagesTxParams{
+	if req.MediaIDs != nil {
+		err = server.store.UpdatePostMediaTx(c.Request.Context(), db.UpdatePostMediaTxParams{
 			PostID:   id,
-			ImageIDs: req.ImageIDs,
+			MediaIDs: req.MediaIDs,
 		})
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update post images"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update post media"})
 			return
 		}
 	}
@@ -363,7 +363,7 @@ func (server *Server) getPostsByUser(c *gin.Context) {
 		return
 	}
 
-	posts, err := server.store.GetPostsByUserWithImages(c.Request.Context(), db.GetPostsByUserWithImagesParams{
+	posts, err := server.store.GetPostsByUserWithMedia(c.Request.Context(), db.GetPostsByUserWithMediaParams{
 		UserID: userID,
 		Limit:  int32(limit),
 		Offset: int32(offset),

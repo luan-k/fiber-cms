@@ -9,19 +9,19 @@ import (
 )
 
 type Querier interface {
-	CreateImage(ctx context.Context, arg CreateImageParams) (Image, error)
-	CreatePostImage(ctx context.Context, arg CreatePostImageParams) (PostImage, error)
+	CreateMedia(ctx context.Context, arg CreateMediaParams) (Medium, error)
+	CreatePostMedia(ctx context.Context, arg CreatePostMediaParams) (PostMedium, error)
 	CreatePostTaxonomy(ctx context.Context, arg CreatePostTaxonomyParams) (PostsTaxonomy, error)
 	CreatePosts(ctx context.Context, arg CreatePostsParams) (Post, error)
 	CreateTaxonomy(ctx context.Context, arg CreateTaxonomyParams) (Taxonomy, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	CreateUserPost(ctx context.Context, arg CreateUserPostParams) (UserPost, error)
-	DeleteImage(ctx context.Context, id int64) error
-	DeleteImagePosts(ctx context.Context, imageID int64) error
-	DeleteImagesByUserID(ctx context.Context, userID int64) error
+	DeleteMedia(ctx context.Context, id int64) error
+	DeleteMediaByUserID(ctx context.Context, userID int64) error
+	DeleteMediaPosts(ctx context.Context, mediaID int64) error
 	DeletePost(ctx context.Context, id int64) error
-	DeletePostImage(ctx context.Context, arg DeletePostImageParams) error
-	DeletePostImages(ctx context.Context, postID int64) error
+	DeletePostMedia(ctx context.Context, arg DeletePostMediaParams) error
+	DeletePostMedias(ctx context.Context, postID int64) error
 	DeletePostTaxonomies(ctx context.Context, postID int64) error
 	DeletePostTaxonomy(ctx context.Context, arg DeletePostTaxonomyParams) error
 	DeletePostsByUserID(ctx context.Context, userID int64) error
@@ -31,18 +31,18 @@ type Querier interface {
 	DeleteUserPost(ctx context.Context, postID int64) error
 	DeleteUserPostsByUserID(ctx context.Context, userID int64) error
 	DeleteUserSessions(ctx context.Context, id int64) error
-	GetImage(ctx context.Context, id int64) (Image, error)
-	GetImagePostCount(ctx context.Context, imageID int64) (int64, error)
-	GetImagesByPost(ctx context.Context, postID int64) ([]Image, error)
-	GetImagesByUser(ctx context.Context, arg GetImagesByUserParams) ([]Image, error)
-	GetPopularImages(ctx context.Context, limit int32) ([]GetPopularImagesRow, error)
+	GetMedia(ctx context.Context, id int64) (Medium, error)
+	GetMediaByPost(ctx context.Context, postID int64) ([]Medium, error)
+	GetMediaByUser(ctx context.Context, arg GetMediaByUserParams) ([]Medium, error)
+	GetMediaPostCount(ctx context.Context, mediaID int64) (int64, error)
+	GetPopularMedia(ctx context.Context, limit int32) ([]GetPopularMediaRow, error)
 	GetPopularTaxonomies(ctx context.Context, limit int32) ([]GetPopularTaxonomiesRow, error)
 	GetPost(ctx context.Context, id int64) (Post, error)
-	GetPostImageCount(ctx context.Context, postID int64) (int64, error)
+	GetPostMediaCount(ctx context.Context, postID int64) (int64, error)
 	GetPostTaxonomies(ctx context.Context, postID int64) ([]Taxonomy, error)
 	GetPostTaxonomyCount(ctx context.Context, postID int64) (int64, error)
-	GetPostWithImages(ctx context.Context, id int64) (GetPostWithImagesRow, error)
-	GetPostsByUserWithImages(ctx context.Context, arg GetPostsByUserWithImagesParams) ([]GetPostsByUserWithImagesRow, error)
+	GetPostWithMedia(ctx context.Context, id int64) (GetPostWithMediaRow, error)
+	GetPostsByUserWithMedia(ctx context.Context, arg GetPostsByUserWithMediaParams) ([]GetPostsByUserWithMediaRow, error)
 	GetTaxonomy(ctx context.Context, id int64) (Taxonomy, error)
 	GetTaxonomyByName(ctx context.Context, name string) (Taxonomy, error)
 	GetTaxonomyPostCount(ctx context.Context, taxonomyID int64) (int64, error)
@@ -50,19 +50,19 @@ type Querier interface {
 	GetUser(ctx context.Context, id int64) (User, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByUsername(ctx context.Context, username string) (User, error)
-	GetUserImageCount(ctx context.Context, userID int64) (int64, error)
-	ListImages(ctx context.Context, arg ListImagesParams) ([]Image, error)
-	ListImagesWithPostCount(ctx context.Context, arg ListImagesWithPostCountParams) ([]ListImagesWithPostCountRow, error)
+	GetUserMediaCount(ctx context.Context, userID int64) (int64, error)
+	ListMedia(ctx context.Context, arg ListMediaParams) ([]Medium, error)
+	ListMediaWithPostCount(ctx context.Context, arg ListMediaWithPostCountParams) ([]ListMediaWithPostCountRow, error)
 	ListPosts(ctx context.Context, arg ListPostsParams) ([]Post, error)
-	ListPostsWithImages(ctx context.Context, arg ListPostsWithImagesParams) ([]ListPostsWithImagesRow, error)
+	ListPostsWithMedia(ctx context.Context, arg ListPostsWithMediaParams) ([]ListPostsWithMediaRow, error)
 	ListTaxonomies(ctx context.Context, arg ListTaxonomiesParams) ([]Taxonomy, error)
 	ListTaxonomiesWithPostCount(ctx context.Context, arg ListTaxonomiesWithPostCountParams) ([]ListTaxonomiesWithPostCountRow, error)
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]User, error)
-	SearchImagesByName(ctx context.Context, arg SearchImagesByNameParams) ([]Image, error)
+	SearchMediaByName(ctx context.Context, arg SearchMediaByNameParams) ([]Medium, error)
 	SearchTaxonomiesByName(ctx context.Context, arg SearchTaxonomiesByNameParams) ([]Taxonomy, error)
-	TransferImagesToUser(ctx context.Context, arg TransferImagesToUserParams) error
+	TransferMediaToUser(ctx context.Context, arg TransferMediaToUserParams) error
 	TransferPostsToAdmin(ctx context.Context, arg TransferPostsToAdminParams) error
-	UpdateImage(ctx context.Context, arg UpdateImageParams) (Image, error)
+	UpdateMedia(ctx context.Context, arg UpdateMediaParams) (Medium, error)
 	UpdatePost(ctx context.Context, arg UpdatePostParams) (Post, error)
 	UpdatePostsUsername(ctx context.Context, arg UpdatePostsUsernameParams) error
 	UpdateTaxonomy(ctx context.Context, arg UpdateTaxonomyParams) (Taxonomy, error)
