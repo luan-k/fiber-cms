@@ -51,8 +51,12 @@ func (server *Server) setupRoutes() {
 	users.DELETE("/:id", server.deleteUser)
 
 	posts := v1.Group("/posts")
-	posts.GET("", server.getPosts)
-	posts.GET("/:id", server.getPostByID)
+	posts.POST("", server.createPost)       // POST /api/v1/posts
+	posts.GET("", server.getPosts)          // GET /api/v1/posts
+	posts.GET("/:id", server.getPostByID)   // GET /api/v1/posts/:id
+	posts.PUT("/:id", server.updatePost)    // PUT /api/v1/posts/:id
+	posts.DELETE("/:id", server.deletePost) // DELETE /api/v1/posts/:id
+	posts.GET("/user/:id", server.getPostsByUser)
 
 	server.router = router
 }
