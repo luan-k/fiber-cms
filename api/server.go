@@ -57,6 +57,18 @@ func (server *Server) setupRoutes() {
 	posts.PUT("/:id", server.updatePost)    // PUT /api/v1/posts/:id
 	posts.DELETE("/:id", server.deletePost) // DELETE /api/v1/posts/:id
 	posts.GET("/user/:id", server.getPostsByUser)
+	posts.GET("/:id/taxonomies", server.getPostTaxonomies) // GET /api/v1/posts/:id/taxonomies
+
+	taxonomies := v1.Group("/taxonomies")
+	taxonomies.POST("", server.createTaxonomy)              // POST /api/v1/taxonomies
+	taxonomies.GET("", server.getTaxonomies)                // GET /api/v1/taxonomies
+	taxonomies.GET("/popular", server.getPopularTaxonomies) // GET /api/v1/taxonomies/popular
+	taxonomies.GET("/search", server.searchTaxonomies)      // GET /api/v1/taxonomies/search
+	taxonomies.GET("/:id", server.getTaxonomyByID)          // GET /api/v1/taxonomies/:id
+	taxonomies.GET("/name/:name", server.getTaxonomyByName) // GET /api/v1/taxonomies/name/:name
+	taxonomies.PUT("/:id", server.updateTaxonomy)           // PUT /api/v1/taxonomies/:id
+	taxonomies.DELETE("/:id", server.deleteTaxonomy)        // DELETE /api/v1/taxonomies/:id
+	taxonomies.GET("/:id/posts", server.getTaxonomyPosts)   // GET /api/v1/taxonomies/:id/posts
 
 	server.router = router
 }
