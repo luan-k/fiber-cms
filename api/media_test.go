@@ -15,8 +15,8 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	mockdb "github.com/luan-k/fiber-cms/db/mock"
-	db "github.com/luan-k/fiber-cms/db/sqlc"
+	mockdb "github.com/go-live-cms/go-live-cms/db/mock"
+	db "github.com/go-live-cms/go-live-cms/db/sqlc"
 )
 
 func randomMedia() db.Medium {

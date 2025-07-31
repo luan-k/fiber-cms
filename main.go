@@ -4,10 +4,10 @@ import (
 	"database/sql"
 	"log"
 
-	_ "github.com/lib/pq"
-	"github.com/luan-k/fiber-cms/api"
-	db "github.com/luan-k/fiber-cms/db/sqlc"
-	"github.com/luan-k/fiber-cms/util"
+	"github.com/go-live-cms/go-live-cms/api"
+	_ "github.com/go-live-cms/go-live-cms/db/sqlc"
+	db "github.com/go-live-cms/go-live-cms/db/sqlc"
+	"github.com/go-live-cms/go-live-cms/util"
 )
 
 func main() {

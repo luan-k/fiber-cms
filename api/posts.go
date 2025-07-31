@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	db "github.com/luan-k/fiber-cms/db/sqlc"
+	db "github.com/go-live-cms/go-live-cms/db/sqlc"
 )
 
 type CreatePostRequest struct {

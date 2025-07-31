@@ -14,9 +14,9 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	mockdb "github.com/luan-k/fiber-cms/db/mock"
-	db "github.com/luan-k/fiber-cms/db/sqlc"
-	"github.com/luan-k/fiber-cms/util"
+	mockdb "github.com/go-live-cms/go-live-cms/db/mock"
+	db "github.com/go-live-cms/go-live-cms/db/sqlc"
+	"github.com/go-live-cms/go-live-cms/util"
 )
 
 func randomUserNew() db.User {

@@ -23,6 +23,6 @@ test:
 	go test -v -cover ./...
 
 mock:
-	mockgen -package mockdb -destination db/mock/store.go github.com/luan-k/fiber-cms/db/sqlc Store
+	mockgen -package mockdb -destination db/mock/store.go github.com/go-live-cms/go-live-cms/db/sqlc Store
 
 .PHONY: createdb dropdb postgres migrateup migratedown sqlc test mock

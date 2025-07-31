@@ -6,8 +6,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/go-live-cms/go-live-cms/util"
 	_ "github.com/lib/pq"
-	"github.com/luan-k/fiber-cms/util"
 )
 
 var testQueries *Queries

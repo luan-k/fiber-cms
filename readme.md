@@ -1,6 +1,6 @@
 # go module
 
-- first we need to initialize our module. run `go mod init github.com/luan-k/fiber-cms`
+- first we need to initialize our module. run `go mod init github.com/go-live-cms/go-live-cms`
 
 - then we run `go mod tidy`
 
