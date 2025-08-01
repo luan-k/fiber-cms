@@ -6,6 +6,8 @@ package db
 
 import (
 	"context"
+
+	"github.com/google/uuid"
 )
 
 type Querier interface {
@@ -13,6 +15,7 @@ type Querier interface {
 	CreatePostMedia(ctx context.Context, arg CreatePostMediaParams) (PostMedium, error)
 	CreatePostTaxonomy(ctx context.Context, arg CreatePostTaxonomyParams) (PostsTaxonomy, error)
 	CreatePosts(ctx context.Context, arg CreatePostsParams) (Post, error)
+	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
 	CreateTaxonomy(ctx context.Context, arg CreateTaxonomyParams) (Taxonomy, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	CreateUserPost(ctx context.Context, arg CreateUserPostParams) (UserPost, error)
@@ -43,6 +46,7 @@ type Querier interface {
 	GetPostTaxonomyCount(ctx context.Context, postID int64) (int64, error)
 	GetPostWithMedia(ctx context.Context, id int64) (GetPostWithMediaRow, error)
 	GetPostsByUserWithMedia(ctx context.Context, arg GetPostsByUserWithMediaParams) ([]GetPostsByUserWithMediaRow, error)
+	GetSession(ctx context.Context, id uuid.UUID) (Session, error)
 	GetTaxonomy(ctx context.Context, id int64) (Taxonomy, error)
 	GetTaxonomyByName(ctx context.Context, name string) (Taxonomy, error)
 	GetTaxonomyPostCount(ctx context.Context, taxonomyID int64) (int64, error)
@@ -55,6 +59,7 @@ type Querier interface {
 	ListMediaWithPostCount(ctx context.Context, arg ListMediaWithPostCountParams) ([]ListMediaWithPostCountRow, error)
 	ListPosts(ctx context.Context, arg ListPostsParams) ([]Post, error)
 	ListPostsWithMedia(ctx context.Context, arg ListPostsWithMediaParams) ([]ListPostsWithMediaRow, error)
+	ListSessionsByUsername(ctx context.Context, username string) ([]Session, error)
 	ListTaxonomies(ctx context.Context, arg ListTaxonomiesParams) ([]Taxonomy, error)
 	ListTaxonomiesWithPostCount(ctx context.Context, arg ListTaxonomiesWithPostCountParams) ([]ListTaxonomiesWithPostCountRow, error)
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]User, error)
@@ -65,6 +70,8 @@ type Querier interface {
 	UpdateMedia(ctx context.Context, arg UpdateMediaParams) (Medium, error)
 	UpdatePost(ctx context.Context, arg UpdatePostParams) (Post, error)
 	UpdatePostsUsername(ctx context.Context, arg UpdatePostsUsernameParams) error
+	UpdateSession(ctx context.Context, arg UpdateSessionParams) (Session, error)
+	UpdateSessionsUsername(ctx context.Context, arg UpdateSessionsUsernameParams) ([]Session, error)
 	UpdateTaxonomy(ctx context.Context, arg UpdateTaxonomyParams) (Taxonomy, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 	UpdateUserPostsOwnership(ctx context.Context, arg UpdateUserPostsOwnershipParams) error

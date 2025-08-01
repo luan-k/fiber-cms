@@ -10,6 +10,7 @@ import (
 
 	db "github.com/go-live-cms/go-live-cms/db/sqlc"
 	gomock "github.com/golang/mock/gomock"
+	uuid "github.com/google/uuid"
 )
 
 // MockStore is a mock of Store interface.
@@ -153,6 +154,21 @@ func (m *MockStore) CreatePosts(arg0 context.Context, arg1 db.CreatePostsParams)
 func (mr *MockStoreMockRecorder) CreatePosts(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePosts", reflect.TypeOf((*MockStore)(nil).CreatePosts), arg0, arg1)
+}
+
+// CreateSession mocks base method.
+func (m *MockStore) CreateSession(arg0 context.Context, arg1 db.CreateSessionParams) (db.Session, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateSession", arg0, arg1)
+	ret0, _ := ret[0].(db.Session)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateSession indicates an expected call of CreateSession.
+func (mr *MockStoreMockRecorder) CreateSession(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSession", reflect.TypeOf((*MockStore)(nil).CreateSession), arg0, arg1)
 }
 
 // CreateTaxonomy mocks base method.
@@ -689,6 +705,21 @@ func (mr *MockStoreMockRecorder) GetPostsByUserWithMedia(arg0, arg1 interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPostsByUserWithMedia", reflect.TypeOf((*MockStore)(nil).GetPostsByUserWithMedia), arg0, arg1)
 }
 
+// GetSession mocks base method.
+func (m *MockStore) GetSession(arg0 context.Context, arg1 uuid.UUID) (db.Session, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSession", arg0, arg1)
+	ret0, _ := ret[0].(db.Session)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSession indicates an expected call of GetSession.
+func (mr *MockStoreMockRecorder) GetSession(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSession", reflect.TypeOf((*MockStore)(nil).GetSession), arg0, arg1)
+}
+
 // GetTaxonomy mocks base method.
 func (m *MockStore) GetTaxonomy(arg0 context.Context, arg1 int64) (db.Taxonomy, error) {
 	m.ctrl.T.Helper()
@@ -869,6 +900,21 @@ func (mr *MockStoreMockRecorder) ListPostsWithMedia(arg0, arg1 interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPostsWithMedia", reflect.TypeOf((*MockStore)(nil).ListPostsWithMedia), arg0, arg1)
 }
 
+// ListSessionsByUsername mocks base method.
+func (m *MockStore) ListSessionsByUsername(arg0 context.Context, arg1 string) ([]db.Session, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListSessionsByUsername", arg0, arg1)
+	ret0, _ := ret[0].([]db.Session)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListSessionsByUsername indicates an expected call of ListSessionsByUsername.
+func (mr *MockStoreMockRecorder) ListSessionsByUsername(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSessionsByUsername", reflect.TypeOf((*MockStore)(nil).ListSessionsByUsername), arg0, arg1)
+}
+
 // ListTaxonomies mocks base method.
 func (m *MockStore) ListTaxonomies(arg0 context.Context, arg1 db.ListTaxonomiesParams) ([]db.Taxonomy, error) {
 	m.ctrl.T.Helper()
@@ -1042,6 +1088,36 @@ func (m *MockStore) UpdatePostsUsername(arg0 context.Context, arg1 db.UpdatePost
 func (mr *MockStoreMockRecorder) UpdatePostsUsername(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePostsUsername", reflect.TypeOf((*MockStore)(nil).UpdatePostsUsername), arg0, arg1)
+}
+
+// UpdateSession mocks base method.
+func (m *MockStore) UpdateSession(arg0 context.Context, arg1 db.UpdateSessionParams) (db.Session, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateSession", arg0, arg1)
+	ret0, _ := ret[0].(db.Session)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateSession indicates an expected call of UpdateSession.
+func (mr *MockStoreMockRecorder) UpdateSession(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSession", reflect.TypeOf((*MockStore)(nil).UpdateSession), arg0, arg1)
+}
+
+// UpdateSessionsUsername mocks base method.
+func (m *MockStore) UpdateSessionsUsername(arg0 context.Context, arg1 db.UpdateSessionsUsernameParams) ([]db.Session, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateSessionsUsername", arg0, arg1)
+	ret0, _ := ret[0].([]db.Session)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateSessionsUsername indicates an expected call of UpdateSessionsUsername.
+func (mr *MockStoreMockRecorder) UpdateSessionsUsername(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSessionsUsername", reflect.TypeOf((*MockStore)(nil).UpdateSessionsUsername), arg0, arg1)
 }
 
 // UpdateTaxonomy mocks base method.
