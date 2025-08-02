@@ -1,25 +1,36 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	db "github.com/go-live-cms/go-live-cms/db/sqlc"
+	"github.com/go-live-cms/go-live-cms/token"
+	"github.com/go-live-cms/go-live-cms/util"
 )
 
 type Server struct {
-	store  db.Store
-	router *gin.Engine
+	store      db.Store
+	router     *gin.Engine
+	config     util.Config
+	tokenMaker token.Maker
 }
 
-func NewServer(store db.Store) *Server {
+func NewServer(config util.Config, store db.Store) (*Server, error) {
+	tokenMaker, err := token.NewPasetoMaker(config.TokenSymmetricKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create token maker: %w", err)
+	}
 	server := &Server{
-		store: store,
+		store:      store,
+		config:     config,
+		tokenMaker: tokenMaker,
 	}
 
 	server.setupRoutes()
-	return server
+	return server, nil
 }
 
 func (server *Server) setupRoutes() {
@@ -36,10 +47,16 @@ func (server *Server) setupRoutes() {
 
 	router.GET("/health", server.healthCheck)
 
-	// todo: implement auth middleware
 	auth := v1.Group("/auth")
 	auth.POST("/register", server.register)
-	auth.POST("/login", server.login)
+	auth.POST("/login", server.loginUser)
+	auth.POST("/refresh", server.renewAccessToken)
+	auth.POST("/logout", authMiddleware(server.tokenMaker), server.logoutUser)
+
+	sessions := v1.Group("/sessions")
+	sessions.Use(authMiddleware(server.tokenMaker))
+	sessions.GET("", server.getUserSessions)    // GET /api/v1/sessions
+	sessions.PUT("/block", server.blockSession) // PUT /api/v1/sessions/block
 
 	users := v1.Group("/users")
 	users.POST("", server.createUser)                          // POST /api/v1/users
@@ -95,12 +112,6 @@ func (server *Server) healthCheck(c *gin.Context) {
 func (server *Server) register(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Register endpoint - coming soon",
-	})
-}
-
-func (server *Server) login(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Login endpoint - coming soon",
 	})
 }
 

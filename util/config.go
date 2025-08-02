@@ -1,15 +1,19 @@
 package util
 
-import "github.com/spf13/viper"
+import (
+	"time"
+
+	"github.com/spf13/viper"
+)
 
 type Config struct {
-	DBDriver             string `mapstructure:"DB_DRIVER"`
-	DBSource             string `mapstructure:"DB_SOURCE"`
-	ServerAddress        string `mapstructure:"SERVER_ADDRESS"`
-	APIPort              string `mapstructure:"API_PORT"`
-	TokenSymmetricKey    string `mapstructure:"TOKEN_SYMMETRIC_KEY"`
-	AccessTokenDuration  string `mapstructure:"ACCESS_TOKEN_DURATION"`
-	RefreshTokenDuration string `mapstructure:"REFRESH_TOKEN_DURATION"`
+	DBDriver             string        `mapstructure:"DB_DRIVER"`
+	DBSource             string        `mapstructure:"DB_SOURCE"`
+	ServerAddress        string        `mapstructure:"SERVER_ADDRESS"`
+	APIPort              string        `mapstructure:"API_PORT"`
+	TokenSymmetricKey    string        `mapstructure:"TOKEN_SYMMETRIC_KEY"`
+	AccessTokenDuration  time.Duration `mapstructure:"ACCESS_TOKEN_DURATION"`
+	RefreshTokenDuration time.Duration `mapstructure:"REFRESH_TOKEN_DURATION"`
 }
 
 func LoadConfig(path string) (config Config, err error) {
@@ -20,7 +24,7 @@ func LoadConfig(path string) (config Config, err error) {
 	viper.AutomaticEnv()
 
 	viper.SetDefault("DB_DRIVER", "postgres")
-	viper.SetDefault("DB_SOURCE", "postgresql://root:secret@localhost:5432/fiber_cms_test?sslmode=disable")
+	viper.SetDefault("DB_SOURCE", "postgresql://root:secret@localhost:5432/golive_cms_test?sslmode=disable")
 	viper.SetDefault("SERVER_ADDRESS", ":8080")
 	viper.SetDefault("API_PORT", ":8080")
 

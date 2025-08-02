@@ -17,7 +17,7 @@ jobs:
         env:
           POSTGRES_USER: root
           POSTGRES_PASSWORD: secret
-          POSTGRES_DB: fiber_cms
+          POSTGRES_DB: golive_cms
         ports:
           - 5432:5432
         options: >-
@@ -48,7 +48,7 @@ jobs:
         run: |
           cat > app.env << EOF
           DB_DRIVER=postgres
-          DB_SOURCE=postgresql://root:secret@localhost:5432/fiber_cms?sslmode=disable
+          DB_SOURCE=postgresql://root:secret@localhost:5432/golive_cms?sslmode=disable
           SERVER_ADDRESS=0.0.0.0:8080
           API_PORT=8080
           EOF
@@ -59,7 +59,7 @@ jobs:
       - name: Test
         env:
           DB_DRIVER: postgres
-          DB_SOURCE: postgresql://root:secret@localhost:5432/fiber_cms?sslmode=disable
+          DB_SOURCE: postgresql://root:secret@localhost:5432/golive_cms?sslmode=disable
           SERVER_ADDRESS: 0.0.0.0:8080
           API_PORT: :8080
         run: make test

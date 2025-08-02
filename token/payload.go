@@ -21,7 +21,7 @@ type Payload struct {
 	TokenType string    `json:"token_type"`
 }
 
-func NewPayload(userID int64, username string, duration time.Duration) (*Payload, error) {
+func NewPayload(userID int64, username string, duration time.Duration, tokenType string) (*Payload, error) {
 	tokenID, err := uuid.NewRandom()
 	if err != nil {
 		return nil, err
@@ -33,6 +33,7 @@ func NewPayload(userID int64, username string, duration time.Duration) (*Payload
 		Username:  username,
 		IssuedAt:  time.Now(),
 		ExpiredAt: time.Now().Add(duration),
+		TokenType: tokenType,
 	}
 	return payload, nil
 }
@@ -42,9 +43,16 @@ func (payload *Payload) Valid() error {
 		return ErrExpiredToken
 	}
 
-	if isTokenBlacklisted(payload.ID) {
-		return ErrInvalidToken
-	}
+	// TODO: Implement token blacklisting when Redis/database is available
+	/* if isTokenBlacklisted(payload.ID) {
+	    return ErrInvalidToken
+	} */
 
 	return nil
 }
+
+// TODO: Implement this function with Redis or database
+/* func isTokenBlacklisted(tokenID uuid.UUID) bool {
+	// Check Redis or database for blacklisted tokens
+	return false
+} */

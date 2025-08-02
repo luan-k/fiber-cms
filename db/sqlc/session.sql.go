@@ -12,9 +12,21 @@ import (
 	"github.com/google/uuid"
 )
 
+const blockSession = `-- name: BlockSession :exec
+UPDATE sessions
+SET is_blocked = true
+WHERE id = $1
+`
+
+func (q *Queries) BlockSession(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, blockSession, id)
+	return err
+}
+
 const createSession = `-- name: CreateSession :one
 INSERT INTO sessions (
     id,
+    user_id,
     username,
     refresh_token,
     user_agent,
@@ -22,12 +34,13 @@ INSERT INTO sessions (
     is_blocked,
     expires_at
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7
-) RETURNING id, username, refresh_token, user_agent, client_ip, is_blocked, expires_at, created_at
+    $1, $2, $3, $4, $5, $6, $7, $8
+) RETURNING id, user_id, username, refresh_token, user_agent, client_ip, is_blocked, expires_at, created_at
 `
 
 type CreateSessionParams struct {
 	ID           uuid.UUID `json:"id"`
+	UserID       int64     `json:"user_id"`
 	Username     string    `json:"username"`
 	RefreshToken string    `json:"refresh_token"`
 	UserAgent    string    `json:"user_agent"`
@@ -39,6 +52,7 @@ type CreateSessionParams struct {
 func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error) {
 	row := q.db.QueryRowContext(ctx, createSession,
 		arg.ID,
+		arg.UserID,
 		arg.Username,
 		arg.RefreshToken,
 		arg.UserAgent,
@@ -49,6 +63,7 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (S
 	var i Session
 	err := row.Scan(
 		&i.ID,
+		&i.UserID,
 		&i.Username,
 		&i.RefreshToken,
 		&i.UserAgent,
@@ -61,7 +76,7 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (S
 }
 
 const getSession = `-- name: GetSession :one
-SELECT id, username, refresh_token, user_agent, client_ip, is_blocked, expires_at, created_at FROM sessions
+SELECT id, user_id, username, refresh_token, user_agent, client_ip, is_blocked, expires_at, created_at FROM sessions
 WHERE id = $1 LIMIT 1
 `
 
@@ -70,6 +85,7 @@ func (q *Queries) GetSession(ctx context.Context, id uuid.UUID) (Session, error)
 	var i Session
 	err := row.Scan(
 		&i.ID,
+		&i.UserID,
 		&i.Username,
 		&i.RefreshToken,
 		&i.UserAgent,
@@ -81,8 +97,46 @@ func (q *Queries) GetSession(ctx context.Context, id uuid.UUID) (Session, error)
 	return i, err
 }
 
+const listSessionsByUser = `-- name: ListSessionsByUser :many
+SELECT id, user_id, username, refresh_token, user_agent, client_ip, is_blocked, expires_at, created_at FROM sessions
+WHERE user_id = $1
+`
+
+func (q *Queries) ListSessionsByUser(ctx context.Context, userID int64) ([]Session, error) {
+	rows, err := q.db.QueryContext(ctx, listSessionsByUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Session{}
+	for rows.Next() {
+		var i Session
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Username,
+			&i.RefreshToken,
+			&i.UserAgent,
+			&i.ClientIp,
+			&i.IsBlocked,
+			&i.ExpiresAt,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listSessionsByUsername = `-- name: ListSessionsByUsername :many
-SELECT id, username, refresh_token, user_agent, client_ip, is_blocked, expires_at, created_at FROM sessions
+SELECT id, user_id, username, refresh_token, user_agent, client_ip, is_blocked, expires_at, created_at FROM sessions
 WHERE username = $1
 `
 
@@ -97,6 +151,7 @@ func (q *Queries) ListSessionsByUsername(ctx context.Context, username string) (
 		var i Session
 		if err := rows.Scan(
 			&i.ID,
+			&i.UserID,
 			&i.Username,
 			&i.RefreshToken,
 			&i.UserAgent,
@@ -123,7 +178,7 @@ UPDATE sessions
 SET 
     username = COALESCE($2, username)
 WHERE id = $1
-RETURNING id, username, refresh_token, user_agent, client_ip, is_blocked, expires_at, created_at
+RETURNING id, user_id, username, refresh_token, user_agent, client_ip, is_blocked, expires_at, created_at
 `
 
 type UpdateSessionParams struct {
@@ -136,6 +191,7 @@ func (q *Queries) UpdateSession(ctx context.Context, arg UpdateSessionParams) (S
 	var i Session
 	err := row.Scan(
 		&i.ID,
+		&i.UserID,
 		&i.Username,
 		&i.RefreshToken,
 		&i.UserAgent,
@@ -151,7 +207,7 @@ const updateSessionsUsername = `-- name: UpdateSessionsUsername :many
 UPDATE sessions
 SET username = $2
 WHERE username = $1
-RETURNING id, username, refresh_token, user_agent, client_ip, is_blocked, expires_at, created_at
+RETURNING id, user_id, username, refresh_token, user_agent, client_ip, is_blocked, expires_at, created_at
 `
 
 type UpdateSessionsUsernameParams struct {
@@ -170,6 +226,7 @@ func (q *Queries) UpdateSessionsUsername(ctx context.Context, arg UpdateSessions
 		var i Session
 		if err := rows.Scan(
 			&i.ID,
+			&i.UserID,
 			&i.Username,
 			&i.RefreshToken,
 			&i.UserAgent,

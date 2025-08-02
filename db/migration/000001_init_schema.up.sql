@@ -40,6 +40,7 @@ CREATE TABLE "posts_taxonomies" (
 
 CREATE TABLE "sessions" (
   "id" uuid PRIMARY KEY,
+  "user_id" bigint NOT NULL,
   "username" varchar NOT NULL,
   "refresh_token" varchar NOT NULL,
   "user_agent" varchar NOT NULL,
