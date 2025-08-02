@@ -177,6 +177,12 @@ func (server *Server) getTaxonomies(c *gin.Context) {
 			taxonomyResponses[i] = toTaxonomyWithCountResponse(taxonomy)
 		}
 
+		totalCount, err := server.store.CountTotalTaxonomies(c.Request.Context())
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to count total taxonomies"})
+			return
+		}
+
 		c.JSON(http.StatusOK, gin.H{
 			"taxonomies": taxonomyResponses,
 			"meta": gin.H{
@@ -184,6 +190,7 @@ func (server *Server) getTaxonomies(c *gin.Context) {
 				"offset":      offset,
 				"count":       len(taxonomyResponses),
 				"with_counts": true,
+				"total":       totalCount,
 			},
 		})
 	} else {
@@ -201,6 +208,12 @@ func (server *Server) getTaxonomies(c *gin.Context) {
 			taxonomyResponses[i] = toTaxonomyResponse(taxonomy)
 		}
 
+		total, err := server.store.CountTotalTaxonomies(c.Request.Context())
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to count total taxonomies"})
+			return
+		}
+
 		c.JSON(http.StatusOK, gin.H{
 			"taxonomies": taxonomyResponses,
 			"meta": gin.H{
@@ -208,6 +221,7 @@ func (server *Server) getTaxonomies(c *gin.Context) {
 				"offset":      offset,
 				"count":       len(taxonomyResponses),
 				"with_counts": false,
+				"total":       total,
 			},
 		})
 	}

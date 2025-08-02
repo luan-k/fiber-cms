@@ -50,6 +50,81 @@ func (mr *MockStoreMockRecorder) BlockSession(arg0, arg1 interface{}) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BlockSession", reflect.TypeOf((*MockStore)(nil).BlockSession), arg0, arg1)
 }
 
+// CountTotalMedia mocks base method.
+func (m *MockStore) CountTotalMedia(arg0 context.Context) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountTotalMedia", arg0)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountTotalMedia indicates an expected call of CountTotalMedia.
+func (mr *MockStoreMockRecorder) CountTotalMedia(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountTotalMedia", reflect.TypeOf((*MockStore)(nil).CountTotalMedia), arg0)
+}
+
+// CountTotalPosts mocks base method.
+func (m *MockStore) CountTotalPosts(arg0 context.Context) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountTotalPosts", arg0)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountTotalPosts indicates an expected call of CountTotalPosts.
+func (mr *MockStoreMockRecorder) CountTotalPosts(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountTotalPosts", reflect.TypeOf((*MockStore)(nil).CountTotalPosts), arg0)
+}
+
+// CountTotalSessions mocks base method.
+func (m *MockStore) CountTotalSessions(arg0 context.Context) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountTotalSessions", arg0)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountTotalSessions indicates an expected call of CountTotalSessions.
+func (mr *MockStoreMockRecorder) CountTotalSessions(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountTotalSessions", reflect.TypeOf((*MockStore)(nil).CountTotalSessions), arg0)
+}
+
+// CountTotalTaxonomies mocks base method.
+func (m *MockStore) CountTotalTaxonomies(arg0 context.Context) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountTotalTaxonomies", arg0)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountTotalTaxonomies indicates an expected call of CountTotalTaxonomies.
+func (mr *MockStoreMockRecorder) CountTotalTaxonomies(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountTotalTaxonomies", reflect.TypeOf((*MockStore)(nil).CountTotalTaxonomies), arg0)
+}
+
+// CountTotalUsers mocks base method.
+func (m *MockStore) CountTotalUsers(arg0 context.Context) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountTotalUsers", arg0)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountTotalUsers indicates an expected call of CountTotalUsers.
+func (mr *MockStoreMockRecorder) CountTotalUsers(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountTotalUsers", reflect.TypeOf((*MockStore)(nil).CountTotalUsers), arg0)
+}
+
 // CreateMedia mocks base method.
 func (m *MockStore) CreateMedia(arg0 context.Context, arg1 db.CreateMediaParams) (db.Medium, error) {
 	m.ctrl.T.Helper()

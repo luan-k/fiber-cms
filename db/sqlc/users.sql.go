@@ -10,6 +10,17 @@ import (
 	"time"
 )
 
+const countTotalUsers = `-- name: CountTotalUsers :one
+SELECT COUNT(*) AS total FROM users
+`
+
+func (q *Queries) CountTotalUsers(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countTotalUsers)
+	var total int64
+	err := row.Scan(&total)
+	return total, err
+}
+
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (
     username,

@@ -12,6 +12,11 @@ import (
 
 type Querier interface {
 	BlockSession(ctx context.Context, id uuid.UUID) error
+	CountTotalMedia(ctx context.Context) (int64, error)
+	CountTotalPosts(ctx context.Context) (int64, error)
+	CountTotalSessions(ctx context.Context) (int64, error)
+	CountTotalTaxonomies(ctx context.Context) (int64, error)
+	CountTotalUsers(ctx context.Context) (int64, error)
 	CreateMedia(ctx context.Context, arg CreateMediaParams) (Medium, error)
 	CreatePostMedia(ctx context.Context, arg CreatePostMediaParams) (PostMedium, error)
 	CreatePostTaxonomy(ctx context.Context, arg CreatePostTaxonomyParams) (PostsTaxonomy, error)

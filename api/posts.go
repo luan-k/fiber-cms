@@ -89,9 +89,16 @@ func (server *Server) getPosts(c *gin.Context) {
 		postResponses[i] = toPostResponse(post)
 	}
 
+	total, err := server.store.CountTotalPosts(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to count total posts"})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"posts": postResponses,
 		"meta": gin.H{
+			"total":  total,
 			"limit":  limit,
 			"offset": offset,
 			"count":  len(postResponses),

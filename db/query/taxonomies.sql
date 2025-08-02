@@ -103,3 +103,5 @@ ORDER BY name
 LIMIT $2
 OFFSET $3;
 
+-- name: CountTotalTaxonomies :one
+SELECT COUNT(*) AS total FROM taxonomies;

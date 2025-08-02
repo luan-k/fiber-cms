@@ -11,6 +11,17 @@ import (
 	"time"
 )
 
+const countTotalMedia = `-- name: CountTotalMedia :one
+SELECT COUNT(*) AS total FROM media
+`
+
+func (q *Queries) CountTotalMedia(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countTotalMedia)
+	var total int64
+	err := row.Scan(&total)
+	return total, err
+}
+
 const createMedia = `-- name: CreateMedia :one
 INSERT INTO media (
     name,

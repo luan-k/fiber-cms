@@ -211,9 +211,16 @@ func (server *Server) getMedia(c *gin.Context) {
 			mediaResponses[i] = toMediaWithCountResponse(m)
 		}
 
+		totalCount, err := server.store.CountTotalMedia(c.Request.Context())
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to count total media"})
+			return
+		}
+
 		c.JSON(http.StatusOK, gin.H{
 			"media": mediaResponses,
 			"meta": gin.H{
+				"total":       totalCount,
 				"limit":       limit,
 				"offset":      offset,
 				"count":       len(mediaResponses),
@@ -236,6 +243,12 @@ func (server *Server) getMedia(c *gin.Context) {
 			mediaResponses[i] = toMediaResponse(m)
 		}
 
+		total, err := server.store.CountTotalMedia(c.Request.Context())
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to count total media"})
+			return
+		}
+
 		c.JSON(http.StatusOK, gin.H{
 			"media": mediaResponses,
 			"meta": gin.H{
@@ -243,6 +256,7 @@ func (server *Server) getMedia(c *gin.Context) {
 				"offset":      offset,
 				"count":       len(mediaResponses),
 				"with_counts": false,
+				"total":       total,
 			},
 		})
 	}

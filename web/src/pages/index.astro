@@ -2,48 +2,229 @@
 import BaseHead from '../components/BaseHead.astro';
 import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
+import FormattedDate from '../components/FormattedDate.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+import { api } from '../lib/api';
+import type { Post } from '../lib/types';
+
+
+let latestPosts: Post[] = [];
+let totalPosts = 0;
+let totalTaxonomies = 0;
+let totalMedia = 0;
+let totalUsers = 0;
+let error: string | null = null;
+
+try {
+  const [postsResponse, taxonomiesResponse, mediaResponse, usersResponse] = await Promise.all([
+    api.getPosts(),
+    api.getTaxonomies(),
+    api.getMedia(),
+    api.getUsers()
+  ]);
+
+  
+  latestPosts = postsResponse.data.slice(0, 3);
+  totalPosts = postsResponse.meta.total;
+  totalTaxonomies = taxonomiesResponse.meta.total;
+  totalMedia = mediaResponse.meta.total;
+  totalUsers = usersResponse.meta.total;
+  
+  console.log('Fetched counts:', { totalPosts, totalTaxonomies, totalMedia, totalUsers });
+} catch (e) {
+  error = e instanceof Error ? e.message : 'Failed to fetch data';
+  console.error('Error fetching data:', e);
+}
 ---
 
 <!doctype html>
 <html lang="en">
-	<head>
-		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
-	</head>
-	<body>
-		<Header />
-		<main>
-			<h1>🧑‍🚀 Hello, Astronaut!</h1>
-			<p>
-				Welcome to the official <a href="https://astro.build/">Astro</a> blog starter template. This
-				template serves as a lightweight, minimally-styled starting point for anyone looking to build
-				a personal website, blog, or portfolio with Astro.
-			</p>
-			<p>
-				This template comes with a few integrations already configured in your
-				<code>astro.config.mjs</code> file. You can customize your setup with
-				<a href="https://astro.build/integrations">Astro Integrations</a> to add tools like Tailwind,
-				React, or Vue to your project.
-			</p>
-			<p>Here are a few ideas on how to get started with the template:</p>
-			<ul>
-				<li>Edit this page in <code>src/pages/index.astro</code></li>
-				<li>Edit the site header items in <code>src/components/Header.astro</code></li>
-				<li>Add your name to the footer in <code>src/components/Footer.astro</code></li>
-				<li>Check out the included blog posts in <code>src/content/blog/</code></li>
-				<li>Customize the blog post page layout in <code>src/layouts/BlogPost.astro</code></li>
-			</ul>
-			<p>
-				Have fun! If you get stuck, remember to
-				<a href="https://docs.astro.build/">read the docs</a>
-				or <a href="https://astro.build/chat">join us on Discord</a> to ask questions.
-			</p>
-			<p>
-				Looking for a blog template with a bit more personality? Check out
-				<a href="https://github.com/Charca/astro-blog-template">astro-blog-template</a>
-				by <a href="https://twitter.com/Charca">Maxi Ferreira</a>.
-			</p>
-		</main>
-		<Footer />
-	</body>
+    <head>
+        <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+        <style>
+            main {
+                width: 960px;
+                max-width: calc(100% - 2em);
+                margin: auto;
+                padding: 3em 1em;
+            }
+            .hero {
+                text-align: center;
+                margin-bottom: 4rem;
+                padding: 2rem 0;
+            }
+            .hero h1 {
+                font-size: 3rem;
+                margin: 0 0 1rem 0;
+                background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+            }
+            .hero p {
+                font-size: 1.2rem;
+                color: rgb(var(--gray));
+                max-width: 600px;
+                margin: 0 auto;
+            }
+            .stats {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 2rem;
+                margin: 3rem 0;
+            }
+            .stat-card {
+                background: white;
+                border: 1px solid rgb(var(--gray-light));
+                border-radius: 12px;
+                padding: 2rem;
+                text-align: center;
+                box-shadow: 0 2px 4px rgba(var(--gray), 10%);
+            }
+            .stat-number {
+                font-size: 2rem;
+                font-weight: bold;
+                color: var(--accent);
+                margin-bottom: 0.5rem;
+            }
+            .stat-label {
+                color: rgb(var(--gray));
+                text-transform: uppercase;
+                font-size: 0.9rem;
+                letter-spacing: 0.5px;
+            }
+            .latest-posts {
+                margin-top: 4rem;
+            }
+            .posts-grid {
+                display: grid;
+                gap: 2rem;
+                margin-top: 2rem;
+            }
+            .post-card {
+                border: 1px solid rgb(var(--gray-light));
+                border-radius: 12px;
+                padding: 1.5rem;
+                background: white;
+                box-shadow: 0 2px 4px rgba(var(--gray), 10%);
+                transition: transform 0.2s ease, box-shadow 0.2s ease;
+            }
+            .post-card:hover {
+                transform: translateY(-2px);
+                box-shadow: var(--box-shadow);
+            }
+            .post-title {
+                color: rgb(var(--black));
+                font-size: 1.25rem;
+                margin: 0 0 0.5rem 0;
+                line-height: 1.2;
+            }
+            .post-meta {
+                color: rgb(var(--gray));
+                font-size: 0.9rem;
+                margin-bottom: 1rem;
+            }
+            .post-description {
+                color: rgb(var(--gray-dark));
+                line-height: 1.6;
+                margin-bottom: 1rem;
+            }
+            .read-more {
+                color: var(--accent);
+                text-decoration: none;
+                font-weight: 500;
+            }
+            .read-more:hover {
+                text-decoration: underline;
+            }
+            .view-all {
+                text-align: center;
+                margin-top: 2rem;
+            }
+            .view-all a {
+                color: var(--accent);
+                text-decoration: none;
+                font-weight: 600;
+                padding: 0.75rem 2rem;
+                border: 2px solid var(--accent);
+                border-radius: 8px;
+                transition: all 0.2s ease;
+            }
+            .view-all a:hover {
+                background: var(--accent);
+                color: white;
+            }
+            .error {
+                background: #fee;
+                border: 1px solid #fcc;
+                color: #c00;
+                padding: 1rem;
+                border-radius: 8px;
+                margin: 2rem 0;
+                text-align: center;
+            }
+        </style>
+    </head>
+    <body>
+        <Header />
+        <main>
+            <section class="hero">
+                <h1>Welcome to {SITE_TITLE}</h1>
+                <p>{SITE_DESCRIPTION}</p>
+            </section>
+
+            <section class="stats">
+                <div class="stat-card">
+                    <div class="stat-number">{totalPosts}</div>
+                    <div class="stat-label">Posts</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{totalTaxonomies}</div>
+                    <div class="stat-label">Taxonomies</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{totalMedia}</div>
+                    <div class="stat-label">Media Files</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{totalUsers}</div>
+                    <div class="stat-label">Users</div>
+                </div>
+            </section>
+
+            {error && (
+                <div class="error">
+                    <strong>API Connection Error:</strong> {error}<br />
+                    <small>Make sure your Go backend is running on port 8080</small>
+                </div>
+            )}
+
+            <section class="latest-posts">
+                <h2>Latest Posts</h2>
+                
+                {latestPosts.length > 0 ? (
+                    <>
+                        <div class="posts-grid">
+                            {latestPosts.map((post) => (
+                                <article class="post-card">
+                                    <h3 class="post-title">{post.title}</h3>
+                                    <div class="post-meta">
+                                        By {post.username} • <FormattedDate date={new Date(post.created_at)} />
+                                    </div>
+                                    <p class="post-description">{post.description}</p>
+                                    <a href={`/posts/${post.id}`} class="read-more">Read more →</a>
+                                </article>
+                            ))}
+                        </div>
+                        <div class="view-all">
+                            <a href="/posts">View All {totalPosts} Posts</a>
+                        </div>
+                    </>
+                ) : !error && (
+                    <p>No posts available yet. <a href="/posts">Check the posts page</a> or start creating content!</p>
+                )}
+            </section>
+        </main>
+        <Footer />
+    </body>
 </html>

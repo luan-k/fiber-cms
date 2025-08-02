@@ -197,3 +197,6 @@ GROUP BY p.id, p.title, p.description, p.content, p.user_id, p.username, p.url, 
 ORDER BY p.created_at DESC
 LIMIT $2
 OFFSET $3;
+
+-- name: CountTotalMedia :one
+SELECT COUNT(*) AS total FROM media;

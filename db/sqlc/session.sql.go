@@ -23,6 +23,17 @@ func (q *Queries) BlockSession(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
+const countTotalSessions = `-- name: CountTotalSessions :one
+SELECT COUNT(*) AS total FROM sessions
+`
+
+func (q *Queries) CountTotalSessions(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countTotalSessions)
+	var total int64
+	err := row.Scan(&total)
+	return total, err
+}
+
 const createSession = `-- name: CreateSession :one
 INSERT INTO sessions (
     id,

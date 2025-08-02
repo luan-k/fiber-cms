@@ -10,6 +10,17 @@ import (
 	"database/sql"
 )
 
+const countTotalTaxonomies = `-- name: CountTotalTaxonomies :one
+SELECT COUNT(*) AS total FROM taxonomies
+`
+
+func (q *Queries) CountTotalTaxonomies(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countTotalTaxonomies)
+	var total int64
+	err := row.Scan(&total)
+	return total, err
+}
+
 const createPostTaxonomy = `-- name: CreatePostTaxonomy :one
 INSERT INTO posts_taxonomies (
     post_id,

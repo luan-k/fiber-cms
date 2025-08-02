@@ -41,3 +41,6 @@ RETURNING *;
 UPDATE sessions
 SET is_blocked = true
 WHERE id = $1;
+
+-- name: CountTotalSessions :one
+SELECT COUNT(*) AS total FROM sessions;

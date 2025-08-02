@@ -71,3 +71,6 @@ WHERE user_id = $1;
 UPDATE user_posts 
 SET user_id = $2
 WHERE user_id = $1;
+
+-- name: CountTotalUsers :one
+SELECT COUNT(*) AS total FROM users;

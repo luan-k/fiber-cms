@@ -48,3 +48,6 @@ WHERE id = $1;
 -- name: DeleteUserPost :exec
 DELETE FROM user_posts
 WHERE post_id = $1;
+
+-- name: CountTotalPosts :one
+SELECT COUNT(*) AS total FROM posts;

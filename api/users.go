@@ -188,12 +188,19 @@ func (server *Server) getUsers(c *gin.Context) {
 		userResponses[i] = toUserResponse(user)
 	}
 
+	totalCount, err := server.store.CountTotalUsers(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to count total users"})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"users": userResponses,
 		"meta": gin.H{
 			"limit":  limit,
 			"offset": offset,
 			"count":  len(userResponses),
+			"total":  totalCount,
 		},
 	})
 }
