@@ -266,10 +266,14 @@ func TestListTaxonomiesAPI(t *testing.T) {
 					}).
 					Times(1).
 					Return(taxonomies, nil)
+				store.EXPECT().
+					CountTotalTaxonomies(gomock.Any()).
+					Times(1).
+					Return(int64(100), nil)
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusOK, recorder.Code)
-				requireBodyMatchTaxonomies(t, recorder.Body.String(), taxonomies)
+				requireBodyMatchTaxonomies(t, recorder.Body.String(), taxonomies, int64(100))
 			},
 		},
 		{
@@ -283,10 +287,14 @@ func TestListTaxonomiesAPI(t *testing.T) {
 					}).
 					Times(1).
 					Return(taxonomiesWithCount, nil)
+				store.EXPECT().
+					CountTotalTaxonomies(gomock.Any()).
+					Times(1).
+					Return(int64(150), nil)
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusOK, recorder.Code)
-				requireBodyMatchTaxonomiesWithCount(t, recorder.Body.String(), taxonomiesWithCount)
+				requireBodyMatchTaxonomiesWithCount(t, recorder.Body.String(), taxonomiesWithCount, int64(150))
 			},
 		},
 		{
@@ -436,7 +444,7 @@ func TestSearchTaxonomiesAPI(t *testing.T) {
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusOK, recorder.Code)
-				requireBodyMatchTaxonomies(t, recorder.Body.String(), searchResults)
+				requireBodyMatchTaxonomiesWithoutTotal(t, recorder.Body.String(), searchResults)
 			},
 		},
 		{
@@ -874,20 +882,22 @@ func requireBodyMatchTaxonomy(t *testing.T, body string, taxonomy db.Taxonomy) {
 	require.Equal(t, taxonomy.Description, response.Taxonomy.Description)
 }
 
-func requireBodyMatchTaxonomies(t *testing.T, body string, taxonomies []db.Taxonomy) {
+func requireBodyMatchTaxonomies(t *testing.T, body string, taxonomies []db.Taxonomy, expectedTotal int64) {
 	var response struct {
 		Taxonomies []TaxonomyResponse `json:"taxonomies"`
 		Meta       struct {
-			Limit      int  `json:"limit"`
-			Offset     int  `json:"offset"`
-			Count      int  `json:"count"`
-			WithCounts bool `json:"with_counts"`
+			Total      int64 `json:"total"`
+			Limit      int   `json:"limit"`
+			Offset     int   `json:"offset"`
+			Count      int   `json:"count"`
+			WithCounts bool  `json:"with_counts"`
 		} `json:"meta"`
 	}
 	err := json.Unmarshal([]byte(body), &response)
 	require.NoError(t, err)
 
 	require.Equal(t, len(taxonomies), len(response.Taxonomies))
+	require.Equal(t, expectedTotal, response.Meta.Total)
 	for i, taxonomy := range taxonomies {
 		require.Equal(t, taxonomy.ID, response.Taxonomies[i].ID)
 		require.Equal(t, taxonomy.Name, response.Taxonomies[i].Name)
@@ -895,14 +905,15 @@ func requireBodyMatchTaxonomies(t *testing.T, body string, taxonomies []db.Taxon
 	}
 }
 
-func requireBodyMatchTaxonomiesWithCount(t *testing.T, body string, taxonomies []db.ListTaxonomiesWithPostCountRow) {
+func requireBodyMatchTaxonomiesWithCount(t *testing.T, body string, taxonomies []db.ListTaxonomiesWithPostCountRow, expectedTotal int64) {
 	var response struct {
 		Taxonomies []TaxonomyResponse `json:"taxonomies"`
 		Meta       struct {
-			Limit      int  `json:"limit"`
-			Offset     int  `json:"offset"`
-			Count      int  `json:"count"`
-			WithCounts bool `json:"with_counts"`
+			Limit      int64 `json:"limit"`
+			Offset     int   `json:"offset"`
+			Count      int   `json:"count"`
+			WithCounts bool  `json:"with_counts"`
+			Total      int64 `json:"total"`
 		} `json:"meta"`
 	}
 	err := json.Unmarshal([]byte(body), &response)
@@ -910,11 +921,33 @@ func requireBodyMatchTaxonomiesWithCount(t *testing.T, body string, taxonomies [
 
 	require.Equal(t, len(taxonomies), len(response.Taxonomies))
 	require.True(t, response.Meta.WithCounts)
+	require.Equal(t, expectedTotal, response.Meta.Total)
 	for i, taxonomy := range taxonomies {
 		require.Equal(t, taxonomy.ID, response.Taxonomies[i].ID)
 		require.Equal(t, taxonomy.Name, response.Taxonomies[i].Name)
 		require.Equal(t, taxonomy.Description, response.Taxonomies[i].Description)
 		require.Equal(t, taxonomy.PostCount, *response.Taxonomies[i].PostCount)
+	}
+}
+
+func requireBodyMatchTaxonomiesWithoutTotal(t *testing.T, body string, taxonomies []db.Taxonomy) {
+	var response struct {
+		Taxonomies []TaxonomyResponse `json:"taxonomies"`
+		Meta       struct {
+			Query  string `json:"query,omitempty"`
+			Limit  int    `json:"limit"`
+			Offset int    `json:"offset"`
+			Count  int    `json:"count"`
+		} `json:"meta"`
+	}
+	err := json.Unmarshal([]byte(body), &response)
+	require.NoError(t, err)
+
+	require.Equal(t, len(taxonomies), len(response.Taxonomies))
+	for i, taxonomy := range taxonomies {
+		require.Equal(t, taxonomy.ID, response.Taxonomies[i].ID)
+		require.Equal(t, taxonomy.Name, response.Taxonomies[i].Name)
+		require.Equal(t, taxonomy.Description, response.Taxonomies[i].Description)
 	}
 }
 

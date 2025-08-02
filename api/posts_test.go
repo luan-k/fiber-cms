@@ -327,10 +327,14 @@ func TestListPostsAPI(t *testing.T) {
 					}).
 					Times(1).
 					Return(posts, nil)
+				store.EXPECT().
+					CountTotalPosts(gomock.Any()).
+					Times(1).
+					Return(int64(100), nil)
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusOK, recorder.Code)
-				requireBodyMatchPosts(t, recorder.Body.String(), posts)
+				requireBodyMatchPosts(t, recorder.Body.String(), posts, int64(100))
 			},
 		},
 		{
@@ -679,19 +683,21 @@ func requireBodyMatchPost(t *testing.T, body string, post db.Post) {
 	require.Equal(t, post.Url, response.Post.Url)
 }
 
-func requireBodyMatchPosts(t *testing.T, body string, posts []db.Post) {
+func requireBodyMatchPosts(t *testing.T, body string, posts []db.Post, expectedTotal int64) {
 	var response struct {
 		Posts []PostResponse `json:"posts"`
 		Meta  struct {
-			Limit  int `json:"limit"`
-			Offset int `json:"offset"`
-			Count  int `json:"count"`
+			Total  int64 `json:"total"`
+			Limit  int   `json:"limit"`
+			Offset int   `json:"offset"`
+			Count  int   `json:"count"`
 		} `json:"meta"`
 	}
 	err := json.Unmarshal([]byte(body), &response)
 	require.NoError(t, err)
 
 	require.Equal(t, len(posts), len(response.Posts))
+	require.Equal(t, expectedTotal, response.Meta.Total)
 	for i, post := range posts {
 		require.Equal(t, post.ID, response.Posts[i].ID)
 		require.Equal(t, post.Title, response.Posts[i].Title)

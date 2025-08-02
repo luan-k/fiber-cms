@@ -303,10 +303,14 @@ func TestListMediaAPI(t *testing.T) {
 					}).
 					Times(1).
 					Return(media, nil)
+				store.EXPECT().
+					CountTotalMedia(gomock.Any()).
+					Times(1).
+					Return(int64(100), nil)
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusOK, recorder.Code)
-				requireBodyMatchMediaList(t, recorder.Body.String(), media)
+				requireBodyMatchMediaList(t, recorder.Body.String(), media, int64(100))
 			},
 		},
 		{
@@ -320,10 +324,14 @@ func TestListMediaAPI(t *testing.T) {
 					}).
 					Times(1).
 					Return(mediaWithCount, nil)
+				store.EXPECT().
+					CountTotalMedia(gomock.Any()).
+					Times(1).
+					Return(int64(150), nil)
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusOK, recorder.Code)
-				requireBodyMatchMediaWithCount(t, recorder.Body.String(), mediaWithCount)
+				requireBodyMatchMediaWithCount(t, recorder.Body.String(), mediaWithCount, int64(150))
 			},
 		},
 		{
@@ -477,7 +485,7 @@ func TestSearchMediaAPI(t *testing.T) {
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusOK, recorder.Code)
-				requireBodyMatchMediaList(t, recorder.Body.String(), searchResults)
+				requireBodyMatchMediaListWithoutTotal(t, recorder.Body.String(), searchResults)
 			},
 		},
 		{
@@ -730,7 +738,7 @@ func TestGetMediaByUserAPI(t *testing.T) {
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusOK, recorder.Code)
-				requireBodyMatchMediaList(t, recorder.Body.String(), userMedia)
+				requireBodyMatchMediaListWithoutTotal(t, recorder.Body.String(), userMedia)
 			},
 		},
 		{
@@ -856,20 +864,22 @@ func requireBodyMatchMedia(t *testing.T, body string, media db.Medium) {
 	require.Equal(t, media.UserID, response.Media.UserID)
 }
 
-func requireBodyMatchMediaList(t *testing.T, body string, media []db.Medium) {
+func requireBodyMatchMediaList(t *testing.T, body string, media []db.Medium, expectedTotal int64) {
 	var response struct {
 		Media []MediaResponse `json:"media"`
 		Meta  struct {
-			Limit      int  `json:"limit"`
-			Offset     int  `json:"offset"`
-			Count      int  `json:"count"`
-			WithCounts bool `json:"with_counts"`
+			Limit      int   `json:"limit"`
+			Offset     int   `json:"offset"`
+			Count      int   `json:"count"`
+			WithCounts bool  `json:"with_counts"`
+			Total      int64 `json:"total"`
 		} `json:"meta"`
 	}
 	err := json.Unmarshal([]byte(body), &response)
 	require.NoError(t, err)
 
 	require.Equal(t, len(media), len(response.Media))
+	require.Equal(t, expectedTotal, response.Meta.Total)
 	for i, m := range media {
 		require.Equal(t, m.ID, response.Media[i].ID)
 		require.Equal(t, m.Name, response.Media[i].Name)
@@ -880,14 +890,15 @@ func requireBodyMatchMediaList(t *testing.T, body string, media []db.Medium) {
 	}
 }
 
-func requireBodyMatchMediaWithCount(t *testing.T, body string, media []db.ListMediaWithPostCountRow) {
+func requireBodyMatchMediaWithCount(t *testing.T, body string, media []db.ListMediaWithPostCountRow, expectedTotal int64) {
 	var response struct {
 		Media []MediaResponse `json:"media"`
 		Meta  struct {
-			Limit      int  `json:"limit"`
-			Offset     int  `json:"offset"`
-			Count      int  `json:"count"`
-			WithCounts bool `json:"with_counts"`
+			Total      int64 `json:"total"`
+			Limit      int   `json:"limit"`
+			Offset     int   `json:"offset"`
+			Count      int   `json:"count"`
+			WithCounts bool  `json:"with_counts"`
 		} `json:"meta"`
 	}
 	err := json.Unmarshal([]byte(body), &response)
@@ -895,6 +906,7 @@ func requireBodyMatchMediaWithCount(t *testing.T, body string, media []db.ListMe
 
 	require.Equal(t, len(media), len(response.Media))
 	require.True(t, response.Meta.WithCounts)
+	require.Equal(t, expectedTotal, response.Meta.Total)
 	for i, m := range media {
 		require.Equal(t, m.ID, response.Media[i].ID)
 		require.Equal(t, m.Name, response.Media[i].Name)
@@ -904,6 +916,31 @@ func requireBodyMatchMediaWithCount(t *testing.T, body string, media []db.ListMe
 		require.Equal(t, m.UserID, response.Media[i].UserID)
 		require.NotNil(t, response.Media[i].PostCount)
 		require.Equal(t, m.PostCount, *response.Media[i].PostCount)
+	}
+}
+
+func requireBodyMatchMediaListWithoutTotal(t *testing.T, body string, media []db.Medium) {
+	var response struct {
+		Media []MediaResponse `json:"media"`
+		Meta  struct {
+			Query  string `json:"query,omitempty"`
+			UserID int64  `json:"user_id,omitempty"`
+			Limit  int    `json:"limit"`
+			Offset int    `json:"offset"`
+			Count  int    `json:"count"`
+		} `json:"meta"`
+	}
+	err := json.Unmarshal([]byte(body), &response)
+	require.NoError(t, err)
+
+	require.Equal(t, len(media), len(response.Media))
+	for i, m := range media {
+		require.Equal(t, m.ID, response.Media[i].ID)
+		require.Equal(t, m.Name, response.Media[i].Name)
+		require.Equal(t, m.Description, response.Media[i].Description)
+		require.Equal(t, m.Alt, response.Media[i].Alt)
+		require.Equal(t, m.MediaPath, response.Media[i].MediaPath)
+		require.Equal(t, m.UserID, response.Media[i].UserID)
 	}
 }
 

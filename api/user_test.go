@@ -266,7 +266,7 @@ func TestGetUserAPI(t *testing.T) {
 func TestListUsersAPI(t *testing.T) {
 	n := 5
 	users := make([]db.User, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		users[i] = randomUserNew()
 		users[i].ID = int64(i + 1)
 	}
@@ -288,10 +288,14 @@ func TestListUsersAPI(t *testing.T) {
 					}).
 					Times(1).
 					Return(users, nil)
+				store.EXPECT().
+					CountTotalUsers(gomock.Any()).
+					Times(1).
+					Return(int64(100), nil)
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusOK, recorder.Code)
-				requireBodyMatchUsers(t, recorder.Body.String(), users)
+				requireBodyMatchUsers(t, recorder.Body.String(), users, int64(100))
 			},
 		},
 		{
@@ -560,19 +564,21 @@ func requireBodyMatchUser(t *testing.T, body string, user db.User) {
 
 }
 
-func requireBodyMatchUsers(t *testing.T, body string, users []db.User) {
+func requireBodyMatchUsers(t *testing.T, body string, users []db.User, expectedTotal int64) {
 	var response struct {
 		Users []UserResponse `json:"users"`
 		Meta  struct {
-			Limit  int `json:"limit"`
-			Offset int `json:"offset"`
-			Count  int `json:"count"`
+			Total  int64 `json:"total"`
+			Limit  int   `json:"limit"`
+			Offset int   `json:"offset"`
+			Count  int   `json:"count"`
 		} `json:"meta"`
 	}
 	err := json.Unmarshal([]byte(body), &response)
 	require.NoError(t, err)
 
 	require.Equal(t, len(users), len(response.Users))
+	require.Equal(t, expectedTotal, response.Meta.Total)
 	for i, user := range users {
 		require.Equal(t, user.ID, response.Users[i].ID)
 		require.Equal(t, user.Username, response.Users[i].Username)
