@@ -2,12 +2,12 @@
 import BaseHead from '../components/BaseHead.astro';
 import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
-import FormattedDate from '../components/FormattedDate.astro';
+import PostsReloader from '../components/PostsReloader.jsx';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 import { api } from '../lib/api';
 import type { Post } from '../lib/types';
 
-
+// Server-side data fetching (runs at build time/server-side)
 let latestPosts: Post[] = [];
 let totalPosts = 0;
 let totalTaxonomies = 0;
@@ -23,17 +23,16 @@ try {
     api.getUsers()
   ]);
 
-  
   latestPosts = postsResponse.data.slice(0, 3);
   totalPosts = postsResponse.meta.total;
   totalTaxonomies = taxonomiesResponse.meta.total;
   totalMedia = mediaResponse.meta.total;
   totalUsers = usersResponse.meta.total;
   
-  console.log('Fetched counts:', { totalPosts, totalTaxonomies, totalMedia, totalUsers });
+  console.log('Server-side fetch - Counts:', { totalPosts, totalTaxonomies, totalMedia, totalUsers });
 } catch (e) {
   error = e instanceof Error ? e.message : 'Failed to fetch data';
-  console.error('Error fetching data:', e);
+  console.error('Server-side error:', e);
 }
 ---
 
@@ -93,67 +92,6 @@ try {
                 font-size: 0.9rem;
                 letter-spacing: 0.5px;
             }
-            .latest-posts {
-                margin-top: 4rem;
-            }
-            .posts-grid {
-                display: grid;
-                gap: 2rem;
-                margin-top: 2rem;
-            }
-            .post-card {
-                border: 1px solid rgb(var(--gray-light));
-                border-radius: 12px;
-                padding: 1.5rem;
-                background: white;
-                box-shadow: 0 2px 4px rgba(var(--gray), 10%);
-                transition: transform 0.2s ease, box-shadow 0.2s ease;
-            }
-            .post-card:hover {
-                transform: translateY(-2px);
-                box-shadow: var(--box-shadow);
-            }
-            .post-title {
-                color: rgb(var(--black));
-                font-size: 1.25rem;
-                margin: 0 0 0.5rem 0;
-                line-height: 1.2;
-            }
-            .post-meta {
-                color: rgb(var(--gray));
-                font-size: 0.9rem;
-                margin-bottom: 1rem;
-            }
-            .post-description {
-                color: rgb(var(--gray-dark));
-                line-height: 1.6;
-                margin-bottom: 1rem;
-            }
-            .read-more {
-                color: var(--accent);
-                text-decoration: none;
-                font-weight: 500;
-            }
-            .read-more:hover {
-                text-decoration: underline;
-            }
-            .view-all {
-                text-align: center;
-                margin-top: 2rem;
-            }
-            .view-all a {
-                color: var(--accent);
-                text-decoration: none;
-                font-weight: 600;
-                padding: 0.75rem 2rem;
-                border: 2px solid var(--accent);
-                border-radius: 8px;
-                transition: all 0.2s ease;
-            }
-            .view-all a:hover {
-                background: var(--accent);
-                color: white;
-            }
             .error {
                 background: #fee;
                 border: 1px solid #fcc;
@@ -162,6 +100,18 @@ try {
                 border-radius: 8px;
                 margin: 2rem 0;
                 text-align: center;
+            }
+            .demo-note {
+                background: #f0f9ff;
+                border: 1px solid #0ea5e9;
+                color: #0c4a6e;
+                padding: 1rem;
+                border-radius: 8px;
+                margin: 2rem 0;
+                text-align: center;
+            }
+            .demo-note strong {
+                color: #075985;
             }
         </style>
     </head>
@@ -199,31 +149,17 @@ try {
                 </div>
             )}
 
-            <section class="latest-posts">
-                <h2>Latest Posts</h2>
-                
-                {latestPosts.length > 0 ? (
-                    <>
-                        <div class="posts-grid">
-                            {latestPosts.map((post) => (
-                                <article class="post-card">
-                                    <h3 class="post-title">{post.title}</h3>
-                                    <div class="post-meta">
-                                        By {post.username} • <FormattedDate date={new Date(post.created_at)} />
-                                    </div>
-                                    <p class="post-description">{post.description}</p>
-                                    <a href={`/posts/${post.id}`} class="read-more">Read more →</a>
-                                </article>
-                            ))}
-                        </div>
-                        <div class="view-all">
-                            <a href="/posts">View All {totalPosts} Posts</a>
-                        </div>
-                    </>
-                ) : !error && (
-                    <p>No posts available yet. <a href="/posts">Check the posts page</a> or start creating content!</p>
-                )}
-            </section>
+            <div class="demo-note">
+                <strong>🚀 Astro Hybrid Demo:</strong> The stats above are fetched server-side (static/cached), 
+                while the posts below can be reloaded client-side with React!
+            </div>
+
+            <!-- This is now a React component that can reload data client-side -->
+            <PostsReloader 
+                client:load 
+                initialPosts={latestPosts} 
+                totalPosts={totalPosts} 
+            />
         </main>
         <Footer />
     </body>
