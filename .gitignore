@@ -1,1 +1,23 @@
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+
+# Frontend
+web/node_modules/
+web/dist/
+web/.astro/
+
+# IDE
+.vscode/
+.idea/
+
+# Environment
+.env
+.env.local
 app.env
