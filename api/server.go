@@ -98,6 +98,8 @@ func (server *Server) setupRoutes() {
 	media.GET("/user/:id", server.getMediaByUser) // GET /api/v1/media/user/:id
 	media.GET("/post/:id", server.getMediaByPost) // GET /api/v1/media/post/:id
 
+	//v1.GET("/test-log", server.testLog) // Temporary log endpoint for testing
+
 	server.router = router
 }
 
@@ -108,6 +110,14 @@ func (server *Server) healthCheck(c *gin.Context) {
 		"version": "v0.0.1",
 	})
 }
+
+// temp log to test server reload
+/* func (server *Server) testLog(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"message":   "🔥 Live reload is working! Updated message",
+		"timestamp": time.Now().Format(time.RFC3339),
+	})
+} */
 
 func (server *Server) register(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{

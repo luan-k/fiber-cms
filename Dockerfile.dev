@@ -1,0 +1,24 @@
+FROM golang:1.24.5-alpine3.22
+
+WORKDIR /app
+
+# Install air for live reloading
+RUN go install github.com/air-verse/air@latest
+
+# Install migrate tool
+RUN apk add --no-cache curl netcat-openbsd
+RUN curl -L https://github.com/golang-migrate/migrate/releases/download/v4.16.2/migrate.linux-amd64.tar.gz | tar xvz && \
+    mv migrate /usr/local/bin/migrate && \
+    chmod +x /usr/local/bin/migrate
+
+# Copy go mod files first for better caching
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Don't copy source code here - it will be mounted as volume
+# COPY . .
+
+EXPOSE 8080
+
+# Use air for live reloading
+CMD ["/go/bin/air", "-c", ".air.toml"]

@@ -25,4 +25,16 @@ test:
 mock:
 	mockgen -package mockdb -destination db/mock/store.go github.com/go-live-cms/go-live-cms/db/sqlc Store
 
-.PHONY: createdb dropdb postgres migrateup migratedown sqlc test mock
+dev:
+	docker compose -f compose.dev.yaml up --build
+
+devdown:
+	docker compose -f compose.dev.yaml down
+
+devlogs:
+	docker compose -f compose.dev.yaml logs -f api
+
+devrebuild:
+	docker compose -f compose.dev.yaml up --build --force-recreate
+
+.PHONY: createdb dropdb postgres migrateup migratedown sqlc test mock dev devdown devlogs devrebuild
