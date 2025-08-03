@@ -25,8 +25,9 @@ func LoadConfig(path string) (config Config, err error) {
 
 	viper.SetDefault("DB_DRIVER", "postgres")
 	viper.SetDefault("DB_SOURCE", "postgresql://root:secret@localhost:5432/golive_cms_test?sslmode=disable")
-	viper.SetDefault("SERVER_ADDRESS", ":8080")
+	viper.SetDefault("SERVER_ADDRESS", "0.0.0.0:8080")
 	viper.SetDefault("API_PORT", ":8080")
+	viper.SetDefault("TOKEN_SYMMETRIC_KEY", "12345678901234567890123456789012")
 
 	if err = viper.ReadInConfig(); err != nil {
 
