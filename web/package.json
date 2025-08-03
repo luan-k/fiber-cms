@@ -22,5 +22,9 @@
     "react-dom": "^19.1.1",
     "sharp": "^0.34.2",
     "tailwindcss": "^4.1.11"
+  },
+  "devDependencies": {
+    "sass": "^1.89.2",
+    "sass-embedded": "^1.89.2"
   }
 }
