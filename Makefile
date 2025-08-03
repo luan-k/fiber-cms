@@ -7,6 +7,9 @@ createdb:
 dropdb:
 	docker exec -it postgres12 dropdb --username=root golive_cms
 
+new_migrate: ## copy this and add you own name
+	migrate create -ext sql -dir db/migration -seq migration_name
+
 migrateup:
 	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/golive_cms?sslmode=disable" --verbose up
 
