@@ -17,7 +17,7 @@ A full-stack CMS built with Go (Gin), PostgreSQL, and Astro.
 
    ```bash
    git clone <repository-url>
-   cd golive-cms
+   cd go-live-cms
    ```
 
 2. **Environment configuration:**
