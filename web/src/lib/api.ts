@@ -1,6 +1,8 @@
 const API_BASE =
   import.meta.env.PUBLIC_API_URL || "http://localhost:8080/api/v1";
 
+console.log("API_BASE:", API_BASE);
+
 interface ApiOptions {
   token?: string;
   method?: string;
@@ -36,7 +38,10 @@ export async function apiCall(endpoint: string, options: ApiOptions = {}) {
   }
 
   try {
-    const response = await fetch(`${API_BASE}${endpoint}`, config);
+    const url = `${API_BASE}${endpoint}`;
+    console.log("Making API call to:", url);
+
+    const response = await fetch(url, config);
 
     if (!response.ok) {
       throw new Error(`API Error: ${response.status} ${response.statusText}`);
