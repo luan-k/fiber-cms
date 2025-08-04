@@ -1,9 +1,8 @@
 ---
-import BaseHead from '../components/BaseHead.astro';
-import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
-import { SITE_TITLE } from '../consts';
-import '../styles/admin.scss';
+import Head from '@/layouts/Head.astro';
+import AdminSidebar from './AdminSidebar.astro';
+import Footer from '@/components/Footer.astro';
+import { SITE_TITLE } from '@/consts';
 
 interface Props {
   title: string;
@@ -16,7 +15,7 @@ const { title, description = "Admin interface for Go Live CMS" } = Astro.props;
 <!doctype html>
 <html lang="en">
   <head>
-    <BaseHead title={`${title} - ${SITE_TITLE}`} description={description} />
+    <Head title={`${title} - ${SITE_TITLE}`} description={description} />
     <script>
       import { authManager } from '../lib/auth';
       
@@ -28,13 +27,16 @@ const { title, description = "Admin interface for Go Live CMS" } = Astro.props;
     </script>
   </head>
   <body>
-    <Header />
-    <main class="admin-main">
-      <div id="admin-content">
+    <main id="admin">
+      <AdminSidebar />
+      <section class="admin-main">
+        <div id="admin-content">
         <slot />
-      </div>
+          <Footer />
+        </div>
+      </section>
     </main>
-    <Footer />
+
     
     <script>
       import { authManager } from '../lib/auth';
