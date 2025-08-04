@@ -1,4 +1,4 @@
-// Icon Path type
+// Shouldn't include a file extension, and it exclusively represents files in assets/icons
 export type IconPath = `${Lowercase<string>}` extends infer T
 ? T extends `${string}.${string}` // Prevent file extensions
     ? never
@@ -9,10 +9,14 @@ export type IconPath = `${Lowercase<string>}` extends infer T
     : never
 : never;
 
+export type IconGradient = string[] | undefined;
+
 export interface Section {
-    icon: IconPath, // Shouldn't include a file extension, and it exclusively represents files in assets/icons
+    icon?: IconPath,
     name: string,
-    link: string
+    link: string,
+    sub?: Section[],
+    gradient?: IconGradient
 }
 
-export type Navigation = Section[][]
+export type Navigation = Section[][];
