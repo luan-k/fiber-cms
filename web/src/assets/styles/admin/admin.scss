@@ -1,14 +1,18 @@
-$admin-max-width: 1200px;
 $admin-padding: 3em 1em;
 $admin-border-radius: 12px;
 $admin-card-shadow: 0 2px 8px rgba(var(--gray), 10%);
 $admin-card-shadow-hover: var(--box-shadow);
 
-.admin-main {
-  margin: auto;
-  max-width: calc(100% - 2em);
+main#admin {
+  display: flex;
+  height: 100vh;
+}
+
+section.admin-main {
   padding: $admin-padding;
-  width: $admin-max-width;
+  height: 100vh;
+  overflow-y: auto;
+  width: 100%;
 }
 
 .admin-header {
