@@ -8,3 +8,11 @@ export type IconPath = `${Lowercase<string>}` extends infer T
         : never
     : never
 : never;
+
+export interface Section {
+    icon: IconPath, // Shouldn't include a file extension, and it exclusively represents files in assets/icons
+    name: string,
+    link: string
+}
+
+export type Navigation = Section[][]
