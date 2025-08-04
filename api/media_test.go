@@ -17,6 +17,7 @@ import (
 
 	mockdb "github.com/go-live-cms/go-live-cms/db/mock"
 	db "github.com/go-live-cms/go-live-cms/db/sqlc"
+	"github.com/go-live-cms/go-live-cms/token"
 )
 
 func randomMedia() db.Medium {
@@ -34,11 +35,13 @@ func randomMedia() db.Medium {
 }
 
 func TestCreateMediaAPI(t *testing.T) {
+	user := randomUserForPosts()
 	media := randomMedia()
 
 	testCases := []struct {
 		name          string
 		body          gin.H
+		setupAuth     func(t *testing.T, request *http.Request, tokenMaker token.Maker)
 		buildStubs    func(store *mockdb.MockStore)
 		checkResponse func(recorder *httptest.ResponseRecorder)
 	}{
@@ -49,6 +52,9 @@ func TestCreateMediaAPI(t *testing.T) {
 				"description": media.Description,
 				"alt":         media.Alt,
 				"media_path":  media.MediaPath,
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.ID, user.Username, time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
@@ -71,6 +77,9 @@ func TestCreateMediaAPI(t *testing.T) {
 				"post_id":     int64(1),
 				"order":       int32(0),
 			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.ID, user.Username, time.Minute)
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					CreateMediaAndLinkTx(gomock.Any(), gomock.Any()).
@@ -90,12 +99,34 @@ func TestCreateMediaAPI(t *testing.T) {
 			},
 		},
 		{
+			name: "NoAuthorization",
+			body: gin.H{
+				"name":        media.Name,
+				"description": media.Description,
+				"alt":         media.Alt,
+				"media_path":  media.MediaPath,
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					CreateMedia(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusUnauthorized, recorder.Code)
+			},
+		},
+		{
 			name: "InvalidName",
 			body: gin.H{
 				"name":        "A",
 				"description": media.Description,
 				"alt":         media.Alt,
 				"media_path":  media.MediaPath,
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.ID, user.Username, time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
@@ -114,6 +145,9 @@ func TestCreateMediaAPI(t *testing.T) {
 				"alt":         media.Alt,
 				"media_path":  media.MediaPath,
 			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.ID, user.Username, time.Minute)
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					CreateMedia(gomock.Any(), gomock.Any()).
@@ -131,6 +165,9 @@ func TestCreateMediaAPI(t *testing.T) {
 				"alt":         media.Alt,
 				"media_path":  media.MediaPath,
 				"post_id":     int64(999),
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.ID, user.Username, time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
@@ -165,6 +202,7 @@ func TestCreateMediaAPI(t *testing.T) {
 			require.NoError(t, err)
 			request.Header.Set("Content-Type", "application/json")
 
+			tc.setupAuth(t, request, server.tokenMaker)
 			server.router.ServeHTTP(recorder, request)
 			tc.checkResponse(recorder)
 		})
@@ -538,6 +576,7 @@ func TestSearchMediaAPI(t *testing.T) {
 }
 
 func TestUpdateMediaAPI(t *testing.T) {
+	user := randomUserForPosts()
 	media := randomMedia()
 	newName := gofakeit.Word()
 	newDescription := gofakeit.Sentence(10)
@@ -546,6 +585,7 @@ func TestUpdateMediaAPI(t *testing.T) {
 		name          string
 		mediaID       int64
 		body          gin.H
+		setupAuth     func(t *testing.T, request *http.Request, tokenMaker token.Maker)
 		buildStubs    func(store *mockdb.MockStore)
 		checkResponse func(recorder *httptest.ResponseRecorder)
 	}{
@@ -555,6 +595,9 @@ func TestUpdateMediaAPI(t *testing.T) {
 			body: gin.H{
 				"name":        newName,
 				"description": newDescription,
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.ID, user.Username, time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 
@@ -577,10 +620,34 @@ func TestUpdateMediaAPI(t *testing.T) {
 			},
 		},
 		{
+			name:    "NoAuthorization",
+			mediaID: media.ID,
+			body: gin.H{
+				"name":        newName,
+				"description": newDescription,
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetMedia(gomock.Any(), gomock.Any()).
+					Times(0)
+				store.EXPECT().
+					UpdateMedia(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusUnauthorized, recorder.Code)
+			},
+		},
+		{
 			name:    "NotFound",
 			mediaID: media.ID,
 			body: gin.H{
 				"name": newName,
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.ID, user.Username, time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
@@ -615,6 +682,7 @@ func TestUpdateMediaAPI(t *testing.T) {
 			require.NoError(t, err)
 			request.Header.Set("Content-Type", "application/json")
 
+			tc.setupAuth(t, request, server.tokenMaker)
 			server.router.ServeHTTP(recorder, request)
 			tc.checkResponse(recorder)
 		})
@@ -622,17 +690,22 @@ func TestUpdateMediaAPI(t *testing.T) {
 }
 
 func TestDeleteMediaAPI(t *testing.T) {
+	user := randomUserForPosts()
 	media := randomMedia()
 
 	testCases := []struct {
 		name          string
 		mediaID       int64
+		setupAuth     func(t *testing.T, request *http.Request, tokenMaker token.Maker)
 		buildStubs    func(store *mockdb.MockStore)
 		checkResponse func(recorder *httptest.ResponseRecorder)
 	}{
 		{
 			name:    "OK",
 			mediaID: media.ID,
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.ID, user.Username, time.Minute)
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					GetMedia(gomock.Any(), gomock.Eq(media.ID)).
@@ -649,8 +722,28 @@ func TestDeleteMediaAPI(t *testing.T) {
 			},
 		},
 		{
+			name:    "NoAuthorization",
+			mediaID: media.ID,
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetMedia(gomock.Any(), gomock.Any()).
+					Times(0)
+				store.EXPECT().
+					DeleteMediaTx(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusUnauthorized, recorder.Code)
+			},
+		},
+		{
 			name:    "NotFound",
 			mediaID: media.ID,
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.ID, user.Username, time.Minute)
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					GetMedia(gomock.Any(), gomock.Eq(media.ID)).
@@ -664,6 +757,9 @@ func TestDeleteMediaAPI(t *testing.T) {
 		{
 			name:    "PermissionDenied",
 			mediaID: media.ID,
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.ID, user.Username, time.Minute)
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					GetMedia(gomock.Any(), gomock.Eq(media.ID)).
@@ -698,6 +794,7 @@ func TestDeleteMediaAPI(t *testing.T) {
 			request, err := http.NewRequest(http.MethodDelete, url, nil)
 			require.NoError(t, err)
 
+			tc.setupAuth(t, request, server.tokenMaker)
 			server.router.ServeHTTP(recorder, request)
 			tc.checkResponse(recorder)
 		})

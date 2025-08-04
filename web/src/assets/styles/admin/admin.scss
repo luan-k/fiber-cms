@@ -1,3 +1,4 @@
+$admin-max-width: 1200px;
 $admin-padding: 3em 1em;
 $admin-border-radius: 12px;
 $admin-card-shadow: 0 2px 8px rgba(var(--gray), 10%);
@@ -9,9 +10,9 @@ main#admin {
 }
 
 section.admin-main {
-  padding: $admin-padding;
   height: 100vh;
   overflow-y: auto;
+  padding: $admin-padding;
   width: 100%;
 }
 
@@ -186,7 +187,6 @@ section.admin-main {
   text-align: center;
 }
 
-// Responsive design
 @media (max-width: 768px) {
   .admin-sections {
     grid-template-columns: 1fr;
@@ -198,7 +198,6 @@ section.admin-main {
   }
 }
 
-// Additional admin utility classes
 .admin {
   &-form {
     background: white;
