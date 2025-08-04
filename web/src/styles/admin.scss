@@ -182,7 +182,6 @@ $admin-card-shadow-hover: var(--box-shadow);
   text-align: center;
 }
 
-// Responsive design
 @media (max-width: 768px) {
   .admin-sections {
     grid-template-columns: 1fr;
@@ -194,7 +193,6 @@ $admin-card-shadow-hover: var(--box-shadow);
   }
 }
 
-// Additional admin utility classes
 .admin {
   &-form {
     background: white;

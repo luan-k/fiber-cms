@@ -29,8 +29,11 @@ mock:
 	mockgen -package mockdb -destination db/mock/store.go github.com/go-live-cms/go-live-cms/db/sqlc Store
 
 # Development commands
-dev:
+devbuild:
 	docker compose -f compose.dev.yaml up --build
+
+dev:
+	docker compose -f compose.dev.yaml up
 
 devdown:
 	docker compose -f compose.dev.yaml down

@@ -36,12 +36,26 @@ func NewServer(config util.Config, store db.Store) (*Server, error) {
 func (server *Server) setupRoutes() {
 	router := gin.Default()
 
-	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"*"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
-		AllowCredentials: true,
-	}))
+	if gin.Mode() == gin.DebugMode {
+		router.Use(cors.New(cors.Config{
+			AllowOrigins: []string{
+				"http://localhost:4321",
+				"http://127.0.0.1:4321",
+				"http://0.0.0.0:4321",
+				"http://web:4321",
+			},
+			AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+			AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
+			AllowCredentials: true,
+		}))
+	} else {
+		router.Use(cors.New(cors.Config{
+			AllowOrigins:     []string{"https://yourdomain.com"},
+			AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+			AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
+			AllowCredentials: true,
+		}))
+	}
 
 	v1 := router.Group("/api/v1")
 

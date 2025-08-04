@@ -17,12 +17,39 @@ const { title, description = "Admin interface for Go Live CMS" } = Astro.props;
 <html lang="en">
   <head>
     <BaseHead title={`${title} - ${SITE_TITLE}`} description={description} />
+    <script>
+      import { authManager } from '../lib/auth';
+      
+      const authState = authManager.getState();
+      if (!authState.isAuthenticated) {
+        const currentPath = window.location.pathname;
+        window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
+      }
+    </script>
   </head>
   <body>
     <Header />
     <main class="admin-main">
-      <slot />
+      <div id="admin-content">
+        <slot />
+      </div>
     </main>
     <Footer />
+    
+    <script>
+      import { authManager } from '../lib/auth';
+      import AuthGuard from '../components/AuthGuard.tsx';
+      
+      const authState = authManager.getState();
+      if (!authState.isAuthenticated) {
+        document.getElementById('admin-content')!.innerHTML = 
+          '<div style="text-align: center; padding: 2rem;">Redirecting to login...</div>';
+        
+        setTimeout(() => {
+          const currentPath = window.location.pathname;
+          window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
+        }, 1000);
+      }
+    </script>
   </body>
 </html>
