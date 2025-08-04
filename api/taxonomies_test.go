@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/gin-gonic/gin"
@@ -16,6 +17,7 @@ import (
 
 	mockdb "github.com/go-live-cms/go-live-cms/db/mock"
 	db "github.com/go-live-cms/go-live-cms/db/sqlc"
+	"github.com/go-live-cms/go-live-cms/token"
 )
 
 func randomTaxonomy() db.Taxonomy {
@@ -29,10 +31,12 @@ func randomTaxonomy() db.Taxonomy {
 
 func TestCreateTaxonomyAPI(t *testing.T) {
 	taxonomy := randomTaxonomy()
+	user := randomUserNew()
 
 	testCases := []struct {
 		name          string
 		body          gin.H
+		setupAuth     func(t *testing.T, request *http.Request, tokenMaker token.Maker)
 		buildStubs    func(store *mockdb.MockStore)
 		checkResponse func(recorder *httptest.ResponseRecorder)
 	}{
@@ -41,6 +45,9 @@ func TestCreateTaxonomyAPI(t *testing.T) {
 			body: gin.H{
 				"name":        taxonomy.Name,
 				"description": taxonomy.Description,
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.ID, user.Username, time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 
@@ -64,10 +71,31 @@ func TestCreateTaxonomyAPI(t *testing.T) {
 			},
 		},
 		{
+			name: "NoAuthorization",
+			body: gin.H{
+				"name":        taxonomy.Name,
+				"description": taxonomy.Description,
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				// No authorization
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetTaxonomyByName(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusUnauthorized, recorder.Code)
+			},
+		},
+		{
 			name: "DuplicateName",
 			body: gin.H{
 				"name":        taxonomy.Name,
 				"description": taxonomy.Description,
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.ID, user.Username, time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 
@@ -86,6 +114,9 @@ func TestCreateTaxonomyAPI(t *testing.T) {
 				"name":        "A",
 				"description": taxonomy.Description,
 			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.ID, user.Username, time.Minute)
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					GetTaxonomyByName(gomock.Any(), gomock.Any()).
@@ -100,6 +131,9 @@ func TestCreateTaxonomyAPI(t *testing.T) {
 			body: gin.H{
 				"name":        taxonomy.Name,
 				"description": "Bad",
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.ID, user.Username, time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
@@ -133,6 +167,7 @@ func TestCreateTaxonomyAPI(t *testing.T) {
 			require.NoError(t, err)
 			request.Header.Set("Content-Type", "application/json")
 
+			tc.setupAuth(t, request, server.tokenMaker)
 			server.router.ServeHTTP(recorder, request)
 			tc.checkResponse(recorder)
 		})
@@ -498,6 +533,7 @@ func TestSearchTaxonomiesAPI(t *testing.T) {
 
 func TestUpdateTaxonomyAPI(t *testing.T) {
 	taxonomy := randomTaxonomy()
+	user := randomUserNew()
 	newName := gofakeit.BuzzWord()
 	newDescription := gofakeit.Sentence(10)
 
@@ -505,6 +541,7 @@ func TestUpdateTaxonomyAPI(t *testing.T) {
 		name          string
 		taxonomyID    int64
 		body          gin.H
+		setupAuth     func(t *testing.T, request *http.Request, tokenMaker token.Maker)
 		buildStubs    func(store *mockdb.MockStore)
 		checkResponse func(recorder *httptest.ResponseRecorder)
 	}{
@@ -514,6 +551,9 @@ func TestUpdateTaxonomyAPI(t *testing.T) {
 			body: gin.H{
 				"name":        newName,
 				"description": newDescription,
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.ID, user.Username, time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 
@@ -541,10 +581,31 @@ func TestUpdateTaxonomyAPI(t *testing.T) {
 			},
 		},
 		{
+			name:       "NoAuthorization",
+			taxonomyID: taxonomy.ID,
+			body: gin.H{
+				"name": newName,
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				// No authorization
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetTaxonomy(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusUnauthorized, recorder.Code)
+			},
+		},
+		{
 			name:       "NotFound",
 			taxonomyID: taxonomy.ID,
 			body: gin.H{
 				"name": newName,
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.ID, user.Username, time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
@@ -561,6 +622,9 @@ func TestUpdateTaxonomyAPI(t *testing.T) {
 			taxonomyID: taxonomy.ID,
 			body: gin.H{
 				"name": newName,
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.ID, user.Username, time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
@@ -600,6 +664,7 @@ func TestUpdateTaxonomyAPI(t *testing.T) {
 			require.NoError(t, err)
 			request.Header.Set("Content-Type", "application/json")
 
+			tc.setupAuth(t, request, server.tokenMaker)
 			server.router.ServeHTTP(recorder, request)
 			tc.checkResponse(recorder)
 		})
@@ -608,11 +673,13 @@ func TestUpdateTaxonomyAPI(t *testing.T) {
 
 func TestDeleteTaxonomyAPI(t *testing.T) {
 	taxonomy := randomTaxonomy()
+	user := randomUserNew()
 
 	testCases := []struct {
 		name          string
 		taxonomyID    int64
 		query         string
+		setupAuth     func(t *testing.T, request *http.Request, tokenMaker token.Maker)
 		buildStubs    func(store *mockdb.MockStore)
 		checkResponse func(recorder *httptest.ResponseRecorder)
 	}{
@@ -620,6 +687,9 @@ func TestDeleteTaxonomyAPI(t *testing.T) {
 			name:       "OK_NoPosts",
 			taxonomyID: taxonomy.ID,
 			query:      "",
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.ID, user.Username, time.Minute)
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					GetTaxonomy(gomock.Any(), gomock.Eq(taxonomy.ID)).
@@ -641,9 +711,28 @@ func TestDeleteTaxonomyAPI(t *testing.T) {
 			},
 		},
 		{
+			name:       "NoAuthorization",
+			taxonomyID: taxonomy.ID,
+			query:      "",
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				// No authorization
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetTaxonomy(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusUnauthorized, recorder.Code)
+			},
+		},
+		{
 			name:       "ConflictWithPosts",
 			taxonomyID: taxonomy.ID,
 			query:      "",
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.ID, user.Username, time.Minute)
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					GetTaxonomy(gomock.Any(), gomock.Eq(taxonomy.ID)).
@@ -663,6 +752,9 @@ func TestDeleteTaxonomyAPI(t *testing.T) {
 			name:       "ForceDelete",
 			taxonomyID: taxonomy.ID,
 			query:      "?force=true",
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.ID, user.Username, time.Minute)
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					GetTaxonomy(gomock.Any(), gomock.Eq(taxonomy.ID)).
@@ -692,6 +784,9 @@ func TestDeleteTaxonomyAPI(t *testing.T) {
 			name:       "NotFound",
 			taxonomyID: taxonomy.ID,
 			query:      "",
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.ID, user.Username, time.Minute)
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					GetTaxonomy(gomock.Any(), gomock.Eq(taxonomy.ID)).
@@ -721,6 +816,7 @@ func TestDeleteTaxonomyAPI(t *testing.T) {
 			request, err := http.NewRequest(http.MethodDelete, url, nil)
 			require.NoError(t, err)
 
+			tc.setupAuth(t, request, server.tokenMaker)
 			server.router.ServeHTTP(recorder, request)
 			tc.checkResponse(recorder)
 		})
