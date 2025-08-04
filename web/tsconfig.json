@@ -15,7 +15,6 @@
     "paths": {
       "@/*": ["src/*"],
       "@assets/*": ["src/assets/*"],
-      "@types/*": ["src/types/*"],
     }
   }
 }
