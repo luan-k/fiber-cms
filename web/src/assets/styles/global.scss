@@ -1,0 +1,17 @@
+:root {
+  font-size: 16px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  transition: .2s;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+}
+
+@import url('./fonts.scss');
+@import url('./admin/admin.scss');
