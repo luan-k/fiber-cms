@@ -73,44 +73,44 @@ func (server *Server) setupRoutes() {
 	sessions.PUT("/block", server.blockSession) // PUT /api/v1/sessions/block
 
 	users := v1.Group("/users")
-	users.POST("", server.createUser)                          // POST /api/v1/users
-	users.GET("", server.getUsers)                             // implement content limiter // GET /api/v1/users
-	users.GET("/:id", server.getUserByID)                      // GET /api/v1/users/:id
-	users.GET("/username/:username", server.getUserByUsername) // GET /api/v1/users/username/:username
-	users.GET("/email/:email", server.getUserByEmail)          // GET /api/v1/users/email/:email
-	users.PUT("/:id", server.updateUser)                       // PUT /api/v1/users/:id
-	users.DELETE("/:id", server.deleteUser)                    // DELETE /api/v1/users/:id
+	users.POST("", authMiddleware(server.tokenMaker), server.createUser)                 // POST /api/v1/users
+	users.GET("", server.getUsers)                                                       // implement content limiter // GET /api/v1/users
+	users.GET("/:id", server.getUserByID)                                                // GET /api/v1/users/:id
+	users.GET("/username/:username", server.getUserByUsername)                           // GET /api/v1/users/username/:username
+	users.GET("/email/:email", authMiddleware(server.tokenMaker), server.getUserByEmail) // GET /api/v1/users/email/:email
+	users.PUT("/:id", authMiddleware(server.tokenMaker), server.updateUser)              // PUT /api/v1/users/:id
+	users.DELETE("/:id", authMiddleware(server.tokenMaker), server.deleteUser)           // DELETE /api/v1/users/:id
 
 	posts := v1.Group("/posts")
-	posts.POST("", server.createPost)                      // POST /api/v1/posts
-	posts.GET("", server.getPosts)                         // GET /api/v1/posts
-	posts.GET("/:id", server.getPostByID)                  // GET /api/v1/posts/:id
-	posts.PUT("/:id", server.updatePost)                   // PUT /api/v1/posts/:id
-	posts.DELETE("/:id", server.deletePost)                // DELETE /api/v1/posts/:id
-	posts.GET("/user/:id", server.getPostsByUser)          // GET /api/v1/posts/user/:id
-	posts.GET("/:id/taxonomies", server.getPostTaxonomies) // GET /api/v1/posts/:id/taxonomies
+	posts.POST("", authMiddleware(server.tokenMaker), server.createPost)       // POST /api/v1/posts
+	posts.GET("", server.getPosts)                                             // GET /api/v1/posts
+	posts.GET("/:id", server.getPostByID)                                      // GET /api/v1/posts/:id
+	posts.PUT("/:id", authMiddleware(server.tokenMaker), server.updatePost)    // PUT /api/v1/posts/:id
+	posts.DELETE("/:id", authMiddleware(server.tokenMaker), server.deletePost) // DELETE /api/v1/posts/:id
+	posts.GET("/user/:id", server.getPostsByUser)                              // GET /api/v1/posts/user/:id
+	posts.GET("/:id/taxonomies", server.getPostTaxonomies)                     // GET /api/v1/posts/:id/taxonomies
 
 	taxonomies := v1.Group("/taxonomies")
-	taxonomies.POST("", server.createTaxonomy)              // POST /api/v1/taxonomies
-	taxonomies.GET("", server.getTaxonomies)                // GET /api/v1/taxonomies
-	taxonomies.GET("/popular", server.getPopularTaxonomies) // GET /api/v1/taxonomies/popular
-	taxonomies.GET("/search", server.searchTaxonomies)      // GET /api/v1/taxonomies/search
-	taxonomies.GET("/:id", server.getTaxonomyByID)          // GET /api/v1/taxonomies/:id
-	taxonomies.GET("/name/:name", server.getTaxonomyByName) // GET /api/v1/taxonomies/name/:name
-	taxonomies.PUT("/:id", server.updateTaxonomy)           // PUT /api/v1/taxonomies/:id
-	taxonomies.DELETE("/:id", server.deleteTaxonomy)        // DELETE /api/v1/taxonomies/:id
-	taxonomies.GET("/:id/posts", server.getTaxonomyPosts)   // GET /api/v1/taxonomies/:id/posts
+	taxonomies.POST("", authMiddleware(server.tokenMaker), server.createTaxonomy)       // POST /api/v1/taxonomies
+	taxonomies.GET("", server.getTaxonomies)                                            // GET /api/v1/taxonomies
+	taxonomies.GET("/popular", server.getPopularTaxonomies)                             // GET /api/v1/taxonomies/popular
+	taxonomies.GET("/search", server.searchTaxonomies)                                  // GET /api/v1/taxonomies/search
+	taxonomies.GET("/:id", server.getTaxonomyByID)                                      // GET /api/v1/taxonomies/:id
+	taxonomies.GET("/name/:name", server.getTaxonomyByName)                             // GET /api/v1/taxonomies/name/:name
+	taxonomies.PUT("/:id", authMiddleware(server.tokenMaker), server.updateTaxonomy)    // PUT /api/v1/taxonomies/:id
+	taxonomies.DELETE("/:id", authMiddleware(server.tokenMaker), server.deleteTaxonomy) // DELETE /api/v1/taxonomies/:id
+	taxonomies.GET("/:id/posts", server.getTaxonomyPosts)                               // GET /api/v1/taxonomies/:id/posts
 
 	media := v1.Group("/media")
-	media.POST("", server.createMedia)            // POST /api/v1/media
-	media.GET("", server.getMedia)                // GET /api/v1/media
-	media.GET("/popular", server.getPopularMedia) // GET /api/v1/media/popular
-	media.GET("/search", server.searchMedia)      // GET /api/v1/media/search
-	media.GET("/:id", server.getMediaByID)        // GET /api/v1/media/:id
-	media.PUT("/:id", server.updateMedia)         // PUT /api/v1/media/:id
-	media.DELETE("/:id", server.deleteMedia)      // DELETE /api/v1/media/:id
-	media.GET("/user/:id", server.getMediaByUser) // GET /api/v1/media/user/:id
-	media.GET("/post/:id", server.getMediaByPost) // GET /api/v1/media/post/:id
+	media.POST("", authMiddleware(server.tokenMaker), server.createMedia)       // POST /api/v1/media
+	media.GET("", server.getMedia)                                              // GET /api/v1/media
+	media.GET("/popular", server.getPopularMedia)                               // GET /api/v1/media/popular
+	media.GET("/search", server.searchMedia)                                    // GET /api/v1/media/search
+	media.GET("/:id", server.getMediaByID)                                      // GET /api/v1/media/:id
+	media.PUT("/:id", authMiddleware(server.tokenMaker), server.updateMedia)    // PUT /api/v1/media/:id
+	media.DELETE("/:id", authMiddleware(server.tokenMaker), server.deleteMedia) // DELETE /api/v1/media/:id
+	media.GET("/user/:id", server.getMediaByUser)                               // GET /api/v1/media/user/:id
+	media.GET("/post/:id", server.getMediaByPost)                               // GET /api/v1/media/post/:id
 
 	//v1.GET("/test-log", server.testLog) // Temporary log endpoint for testing
 
