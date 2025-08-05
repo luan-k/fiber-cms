@@ -1,0 +1,53 @@
+---
+import Page from "./Page.astro"
+import AdminSidebar from "./Sidebar.astro";
+import { SITE_TITLE } from "@/consts";
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = "Admin interface for Go Live CMS" } = Astro.props;
+---
+
+<Page title={`${title} - ${SITE_TITLE}`} {description} >
+  <Fragment slot="head">
+    <script>
+      import { authManager } from "@/lib/auth";
+
+      const authState = authManager.getState();
+      if (!authState.isAuthenticated) {
+        const currentPath = window.location.pathname;
+        window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
+      }
+    </script>
+  </Fragment>
+
+  <main id="admin">
+    <AdminSidebar />
+    <section class="admin-main">
+      <div id="admin-content">
+        <slot />
+      </div>
+    </section>
+  </main>
+
+  <Fragment slot="foot">
+    <script>
+      import { authManager } from "@/lib/auth";
+      import AuthGuard from "@/components/AuthGuard.tsx";
+
+      const authState = authManager.getState();
+      if (!authState.isAuthenticated) {
+        document.getElementById("admin-content")!.innerHTML =
+        "<div style='text-align: center; padding: 2rem;'>Redirecting to login...</div>";
+
+        setTimeout(() => {
+          const currentPath = window.location.pathname;
+          window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
+        }, 1000);
+      }
+    </script>
+  </Fragment>
+</Page>
