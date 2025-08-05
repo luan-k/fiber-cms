@@ -2,21 +2,28 @@ package api
 
 import (
 	"database/sql"
+	"fmt"
+	"io"
+	"mime/multipart"
 	"net/http"
+	"os"
+	"path/filepath"
+	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	db "github.com/go-live-cms/go-live-cms/db/sqlc"
+	"github.com/go-live-cms/go-live-cms/token"
 )
 
 type CreateMediaRequest struct {
-	Name        string `json:"name" binding:"required,min=2,max=255"`
-	Description string `json:"description" binding:"required,min=5,max=500"`
-	Alt         string `json:"alt" binding:"required,min=2,max=255"`
-	MediaPath   string `json:"media_path" binding:"required,min=1,max=500"`
-	PostID      *int64 `json:"post_id" binding:"omitempty"`
-	Order       *int32 `json:"order" binding:"omitempty,min=0"`
+	Name        string `form:"name" binding:"required,min=2,max=255"`
+	Description string `form:"description" binding:"required,min=5,max=500"`
+	Alt         string `form:"alt" binding:"required,min=2,max=255"`
+	PostID      *int64 `form:"post_id" binding:"omitempty"`
+	Order       *int32 `form:"order" binding:"omitempty,min=0"`
 }
 
 type UpdateMediaRequest struct {
@@ -92,16 +99,45 @@ func toPopularMediaResponse(row db.GetPopularMediaRow) PopularMediaResponse {
 }
 
 func (server *Server) createMedia(c *gin.Context) {
+
+	file, header, err := c.Request.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "file upload is required"})
+		return
+	}
+	defer file.Close()
+
+	if !isValidMediaType(header.Filename) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid file type. Supported: jpg, jpeg, png, gif, mp4, mp3, pdf, svg"})
+		return
+	}
+
+	maxSize, err := parseFileSize(server.config.MaxUploadSize)
+	if err != nil {
+		maxSize = 10 << 20
+	}
+
+	if header.Size > maxSize {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("file too large. Maximum size is %s", server.config.MaxUploadSize)})
+		return
+	}
+
+	authPayload := c.MustGet(authorizationPayloadKey).(*token.Payload)
+	userID := authPayload.UserID
+
 	var req CreateMediaRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	userID := int64(1)
+	mediaPath, err := saveUploadedFileWithOriginalName(file, header, server.config.UploadPath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save uploaded file"})
+		return
+	}
 
 	if req.PostID != nil {
-
 		var order int32
 		if req.Order != nil {
 			order = *req.Order
@@ -113,12 +149,14 @@ func (server *Server) createMedia(c *gin.Context) {
 			Name:        req.Name,
 			Description: req.Description,
 			Alt:         req.Alt,
-			MediaPath:   req.MediaPath,
+			MediaPath:   mediaPath,
 			UserID:      userID,
 			PostID:      *req.PostID,
 			Order:       order,
 		})
 		if err != nil {
+
+			os.Remove(filepath.Join(".", mediaPath))
 			if containsString(err.Error(), "post not found") {
 				c.JSON(http.StatusBadRequest, gin.H{"error": "post not found"})
 				return
@@ -132,15 +170,16 @@ func (server *Server) createMedia(c *gin.Context) {
 			"post_media": result.PostMedia,
 		})
 	} else {
-
 		media, err := server.store.CreateMedia(c.Request.Context(), db.CreateMediaParams{
 			Name:        req.Name,
 			Description: req.Description,
 			Alt:         req.Alt,
-			MediaPath:   req.MediaPath,
+			MediaPath:   mediaPath,
 			UserID:      userID,
 		})
 		if err != nil {
+
+			os.Remove(filepath.Join(".", mediaPath))
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create media"})
 			return
 		}
@@ -149,6 +188,112 @@ func (server *Server) createMedia(c *gin.Context) {
 			"media": toMediaResponse(media),
 		})
 	}
+}
+
+func isValidMediaType(filename string) bool {
+	ext := strings.ToLower(filepath.Ext(filename))
+	validExts := []string{
+		".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp",
+		".mp4", ".mov", ".avi", ".mkv", ".webm",
+		".mp3", ".wav", ".ogg", ".m4a",
+		".pdf", ".doc", ".docx", ".txt",
+		".svg",
+	}
+
+	for _, validExt := range validExts {
+		if ext == validExt {
+			return true
+		}
+	}
+	return false
+}
+
+func saveUploadedFileWithOriginalName(file multipart.File, header *multipart.FileHeader, uploadPath string) (string, error) {
+
+	uploadsDir := filepath.Join(".", uploadPath)
+	if err := os.MkdirAll(uploadsDir, 0755); err != nil {
+		return "", err
+	}
+
+	originalName := strings.TrimSuffix(header.Filename, filepath.Ext(header.Filename))
+	ext := filepath.Ext(header.Filename)
+
+	cleanedName := cleanFilename(originalName)
+
+	filename := fmt.Sprintf("%s%s", cleanedName, ext)
+	filePath := filepath.Join(uploadsDir, filename)
+
+	counter := 1
+	for fileExists(filePath) {
+		filename = fmt.Sprintf("%s_%d%s", cleanedName, counter, ext)
+		filePath = filepath.Join(uploadsDir, filename)
+		counter++
+	}
+
+	dst, err := os.Create(filePath)
+	if err != nil {
+		return "", err
+	}
+	defer dst.Close()
+
+	if _, err := io.Copy(dst, file); err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s/%s", uploadPath, filename), nil
+}
+
+func fileExists(filepath string) bool {
+	_, err := os.Stat(filepath)
+	return !os.IsNotExist(err)
+}
+
+func cleanFilename(filename string) string {
+
+	re := regexp.MustCompile(`[^a-zA-Z0-9._-]`)
+	cleaned := re.ReplaceAllString(filename, "_")
+
+	re2 := regexp.MustCompile(`_+`)
+	cleaned = re2.ReplaceAllString(cleaned, "_")
+
+	cleaned = strings.Trim(cleaned, "_")
+
+	if cleaned == "" {
+		cleaned = "untitled"
+	}
+
+	if len(cleaned) > 100 {
+		cleaned = cleaned[:100]
+	}
+
+	return cleaned
+}
+
+func parseFileSize(sizeStr string) (int64, error) {
+	if sizeStr == "" {
+		return 10 << 20, nil
+	}
+
+	sizeStr = strings.ToUpper(strings.TrimSpace(sizeStr))
+
+	var multiplier int64 = 1
+	if strings.HasSuffix(sizeStr, "MB") {
+		multiplier = 1 << 20
+		sizeStr = strings.TrimSuffix(sizeStr, "MB")
+	} else if strings.HasSuffix(sizeStr, "KB") {
+		multiplier = 1 << 10
+		sizeStr = strings.TrimSuffix(sizeStr, "KB")
+	} else if strings.HasSuffix(sizeStr, "GB") {
+		multiplier = 1 << 30
+		sizeStr = strings.TrimSuffix(sizeStr, "GB")
+	}
+
+	size, err := strconv.ParseInt(sizeStr, 10, 64)
+	if err != nil {
+		return 10 << 20, err
+	}
+
+	return size * multiplier, nil
 }
 
 func (server *Server) getMediaByID(c *gin.Context) {
@@ -510,6 +655,9 @@ func (server *Server) deleteMedia(c *gin.Context) {
 		return
 	}
 
+	authPayload := c.MustGet(authorizationPayloadKey).(*token.Payload)
+	userID := authPayload.UserID
+
 	_, err = server.store.GetMedia(c.Request.Context(), id)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -519,8 +667,6 @@ func (server *Server) deleteMedia(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get media"})
 		return
 	}
-
-	userID := int64(1)
 
 	err = server.store.DeleteMediaTx(c.Request.Context(), db.DeleteMediaTxParams{
 		MediaID: id,

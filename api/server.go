@@ -32,9 +32,11 @@ func NewServer(config util.Config, store db.Store) (*Server, error) {
 	}
 
 	server.setupRoutes()
-	if gin.Mode() == gin.DebugMode {
+
+	if gin.Mode() == gin.DebugMode && !config.IsTestMode {
 		server.createDefaultAdminUser()
 	}
+
 	return server, nil
 }
 
@@ -116,6 +118,8 @@ func (server *Server) setupRoutes() {
 	media.DELETE("/:id", authMiddleware(server.tokenMaker), server.deleteMedia) // DELETE /api/v1/media/:id
 	media.GET("/user/:id", server.getMediaByUser)                               // GET /api/v1/media/user/:id
 	media.GET("/post/:id", server.getMediaByPost)                               // GET /api/v1/media/post/:id
+
+	router.Static("/uploads", "./uploads")
 
 	//v1.GET("/test-log", server.testLog) // Temporary log endpoint for testing
 
