@@ -1,26 +1,19 @@
+// Check if we're in Docker environment
+const isDocker =
+  typeof window === "undefined" || process.env.NODE_ENV === "development";
+
 const API_BASE =
-  typeof window === "undefined"
-    ? "http://api:8080/api/v1"
-    : import.meta.env.PUBLIC_API_URL || "http://localhost:8080/api/v1";
+  isDocker && typeof window === "undefined"
+    ? "http://api:8080/api/v1" // Server-side (Docker container to container)
+    : "/api/v1"; // Client-side (use proxy)
 
-// debugging logs for envs
-console.log(
-  "API_BASE:",
-  API_BASE,
-  "Context:",
-  typeof window === "undefined" ? "server" : "browser"
-);
-
-console.log("Environment debug:", {
-  PUBLIC_API_URL: import.meta.env.PUBLIC_API_URL,
-  SERVER_API_URL: import.meta.env.SERVER_API_URL,
-  NODE_ENV: import.meta.env.NODE_ENV,
-  MODE: import.meta.env.MODE,
-  isWindow: typeof window !== "undefined",
-  allEnv: import.meta.env,
-});
+const MEDIA_BASE =
+  isDocker && typeof window === "undefined"
+    ? "http://api:8080" // Server-side (Docker container to container)
+    : ""; // Client-side (use proxy)
 
 console.log("API_BASE:", API_BASE);
+console.log("MEDIA_BASE:", MEDIA_BASE);
 
 interface ApiOptions {
   token?: string;
@@ -39,6 +32,15 @@ interface ApiResponse<T> {
   taxonomies?: T[];
   media?: T[];
   users?: T[];
+}
+
+export function getMediaURL(mediaPath: string): string {
+  if (mediaPath.startsWith("http")) {
+    return mediaPath;
+  }
+  // Remove leading slash if present and add it back consistently
+  const cleanPath = mediaPath.startsWith("/") ? mediaPath : `/${mediaPath}`;
+  return `${MEDIA_BASE}${cleanPath}`;
 }
 
 export async function apiCall(endpoint: string, options: ApiOptions = {}) {
@@ -85,6 +87,8 @@ export async function apiCall(endpoint: string, options: ApiOptions = {}) {
     }
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error("API Error Response:", errorText);
       throw new Error(`API Error: ${response.status} ${response.statusText}`);
     }
 
@@ -93,6 +97,48 @@ export async function apiCall(endpoint: string, options: ApiOptions = {}) {
     console.error("API call failed:", error);
     throw error;
   }
+}
+
+async function authenticatedFetch(
+  url: string,
+  options: RequestInit = {}
+): Promise<Response> {
+  const { authManager } = await import("./auth.ts");
+  let token = authManager.getAccessToken();
+
+  const makeRequest = async (authToken: string) => {
+    return fetch(url, {
+      ...options,
+      headers: {
+        ...options.headers,
+        Authorization: `Bearer ${authToken}`,
+      },
+    });
+  };
+
+  let response = await makeRequest(token!);
+
+  // Handle token expiration
+  if (response.status === 401 && typeof window !== "undefined") {
+    console.log("Token expired, attempting refresh...");
+
+    const refreshed = await authManager.refreshAccessToken();
+
+    if (refreshed) {
+      const newToken = authManager.getAccessToken();
+      if (newToken) {
+        console.log("Token refreshed, retrying request...");
+        response = await makeRequest(newToken);
+      }
+    }
+
+    if (response.status === 401) {
+      window.location.href = "/login";
+      throw new Error("Authentication required");
+    }
+  }
+
+  return response;
 }
 
 export const api = {
@@ -104,6 +150,7 @@ export const api = {
 
   logout: (data: { refresh_token: string }) =>
     apiCall("/auth/logout", { method: "POST", body: data }),
+
   getPosts: async () => {
     const response: ApiResponse<any> = await apiCall("/posts");
     return {
@@ -158,6 +205,71 @@ export const api = {
     };
   },
   searchMedia: (query: string) => apiCall(`/media/search?q=${query}`),
+
+  createMedia: async (formData: FormData) => {
+    try {
+      const response = await authenticatedFetch(`${API_BASE}/media`, {
+        method: "POST",
+        body: formData,
+        // Don't set Content-Type for FormData
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Upload failed");
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error("Upload error:", error);
+      throw error;
+    }
+  },
+
+  // Media update - Simplified
+  updateMedia: async (
+    id: number,
+    data: { name?: string; description?: string; alt?: string }
+  ) => {
+    try {
+      const response = await authenticatedFetch(`${API_BASE}/media/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Update failed");
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error("Update error:", error);
+      throw error;
+    }
+  },
+
+  // Media delete - Simplified
+  deleteMedia: async (id: number) => {
+    try {
+      const response = await authenticatedFetch(`${API_BASE}/media/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Delete failed");
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error("Delete error:", error);
+      throw error;
+    }
+  },
 
   health: () => apiCall("/health", { method: "GET" }),
 };
