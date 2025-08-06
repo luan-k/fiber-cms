@@ -1,7 +1,7 @@
 ---
-import AdminLayout from '../../layouts/AdminLayout.astro';
-import { api } from '../../lib/api';
-import type { Post, User, Taxonomy, Media } from '../../lib/types';
+import Admin from '@/layouts/Admin/Layout.astro';
+import { api } from '@/lib/api';
+import type { Post, User, Taxonomy, Media } from '@/lib/types';
 
 let totalPosts = 0;
 let totalUsers = 0;
@@ -23,7 +23,7 @@ try {
   totalUsers = usersResponse.meta.total;
   totalTaxonomies = taxonomiesResponse.meta.total;
   totalMedia = mediaResponse.meta.total;
-  
+
   recentPosts = postsResponse.data.slice(0, 5);
   recentUsers = usersResponse.data.slice(0, 5);
 } catch (e) {
@@ -32,7 +32,7 @@ try {
 }
 ---
 
-<AdminLayout title="Admin Dashboard" description="Content management system admin dashboard">
+<Admin title="Admin Dashboard" description="Content management system admin dashboard">
   <div class="admin-header">
     <h1>🚀 Admin Dashboard</h1>
     <p>Manage your Go Live CMS content and settings</p>
@@ -117,4 +117,4 @@ try {
       </div>
     </div>
   </div>
-</AdminLayout>
+</Admin>
