@@ -1,14 +1,13 @@
 package api
 
 import (
-	"context"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	db "github.com/go-live-cms/go-live-cms/db/sqlc"
+	"github.com/go-live-cms/go-live-cms/devModeUtil"
 	"github.com/go-live-cms/go-live-cms/token"
 	"github.com/go-live-cms/go-live-cms/util"
 )
@@ -34,7 +33,8 @@ func NewServer(config util.Config, store db.Store) (*Server, error) {
 	server.setupRoutes()
 
 	if gin.Mode() == gin.DebugMode && !config.IsTestMode {
-		server.createDefaultAdminUser()
+		devModeUtil.CreateDefaultAdminUser(server.store)
+		devModeUtil.CreateDummyData(server.store, server.config)
 	}
 
 	return server, nil
@@ -124,41 +124,6 @@ func (server *Server) setupRoutes() {
 	//v1.GET("/test-log", server.testLog) // Temporary log endpoint for testing
 
 	server.router = router
-}
-
-func (server *Server) createDefaultAdminUser() {
-	log.Println("🔧 Checking for default admin user...")
-	existingUser, err := server.store.GetUserByUsername(context.TODO(), "admin")
-	if err == nil && existingUser.Username == "admin" {
-		log.Println("i  Default admin user already exists, skipping creation")
-		return
-	}
-
-	hashedPassword, err := util.HashPassword("123456")
-	if err != nil {
-		log.Printf("❌ Failed to hash admin password: %v", err)
-		return
-	}
-
-	adminUser := db.CreateUserParams{
-		Username:       "admin",
-		Email:          "admin@golive-cms.local",
-		FullName:       "Default Administrator",
-		HashedPassword: hashedPassword,
-		Role:           "admin",
-	}
-	createdUser, err := server.store.CreateUser(context.TODO(), adminUser)
-	if err != nil {
-		log.Printf("❌ Failed to create default admin user: %v", err)
-		return
-	}
-
-	log.Printf(" Default admin user created successfully:")
-	log.Printf("    Email: %s", createdUser.Email)
-	log.Printf("    Username: %s", createdUser.Username)
-	log.Printf("    Password: 123456")
-	log.Printf("     Role: %s", createdUser.Role)
-	log.Printf("     Note: This is a development-only user, change password in production!")
 }
 
 func (server *Server) healthCheck(c *gin.Context) {
