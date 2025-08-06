@@ -1,13 +1,12 @@
 ---
-import Head from '@/layouts/Head.astro';
-import Footer from '@/components/Footer.astro';
-import Header from '@/components/Header.astro';
-import PostsReloader from '@/components/PostsReloader.jsx';
-import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
-import { api } from '@/lib/api';
-import type { Post } from '@/lib/types';
-import "@assets/styles/global.scss";
-import '../styles/global.css';
+import Page from "@/layouts/Page.astro"
+import PostsReloader from "@/components/PostsReloader.jsx"
+import { SITE_DESCRIPTION, SITE_TITLE } from "../consts"
+import { api } from "@/lib/api"
+import "@assets/styles/global.scss"
+import "@/styles/global.css"
+
+import type { Post } from "@/lib/types"
 
 let latestPosts: Post[] = [];
 let totalPosts = 0;
@@ -29,7 +28,7 @@ try {
   totalTaxonomies = taxonomiesResponse.meta.total;
   totalMedia = mediaResponse.meta.total;
   totalUsers = usersResponse.meta.total;
-  
+
   console.log('Server-side fetch - Counts:', { totalPosts, totalTaxonomies, totalMedia, totalUsers });
 } catch (e) {
   error = e instanceof Error ? e.message : 'Failed to fetch data';
@@ -37,10 +36,8 @@ try {
 }
 ---
 
-<!doctype html>
-<html lang="en">
-    <head>
-        <Head title={SITE_TITLE} description={SITE_DESCRIPTION} />
+<Page title={SITE_TITLE} description={SITE_DESCRIPTION}>
+    <Fragment slot="head">
         <style>
             main {
                 width: 960px;
@@ -115,53 +112,49 @@ try {
                 color: #075985;
             }
         </style>
-    </head>
-    <body>
-        <Header />
-        <main>
-            <section class="hero">
-                <h1>Welcome to {SITE_TITLE}</h1>
-                <p>{SITE_DESCRIPTION}</p>
-            </section>
+    </Fragment>
+    <main>
+        <section class="hero">
+            <h1>Welcome to {SITE_TITLE}</h1>
+            <p>{SITE_DESCRIPTION}</p>
+        </section>
 
-            <section class="stats">
-                <div class="stat-card">
-                    <div class="stat-number">{totalPosts}</div>
-                    <div class="stat-label">Posts live reload test</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number">{totalTaxonomies}</div>
-                    <div class="stat-label">Taxonomies</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number">{totalMedia}</div>
-                    <div class="stat-label">Media Files</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number">{totalUsers}</div>
-                    <div class="stat-label">Users</div>
-                </div>
-            </section>
-
-            {error && (
-                <div class="error">
-                    <strong>API Connection Error:</strong> {error}<br />
-                    <small>Make sure your Go backend is running on port 8080</small>
-                </div>
-            )}
-
-            <div class="demo-note">
-                <strong>🚀 Astro Hybrid Demo:</strong> The stats above are fetched server-side (static/cached), 
-                while the posts below can be reloaded client-side with React!
+        <section class="stats">
+            <div class="stat-card">
+                <div class="stat-number">{totalPosts}</div>
+                <div class="stat-label">Posts live reload test</div>
             </div>
+            <div class="stat-card">
+                <div class="stat-number">{totalTaxonomies}</div>
+                <div class="stat-label">Taxonomies</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{totalMedia}</div>
+                <div class="stat-label">Media Files</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{totalUsers}</div>
+                <div class="stat-label">Users</div>
+            </div>
+        </section>
 
-            <!-- This is now a React component that can reload data client-side -->
-            <PostsReloader 
-                client:load 
-                initialPosts={latestPosts} 
-                totalPosts={totalPosts} 
-            />
-        </main>
-        <Footer />
-    </body>
-</html>
+        {error && (
+            <div class="error">
+                <strong>API Connection Error:</strong> {error}<br />
+                <small>Make sure your Go backend is running on port 8080</small>
+            </div>
+        )}
+
+        <div class="demo-note">
+            <strong>🚀 Astro Hybrid Demo:</strong> The stats above are fetched server-side (static/cached), 
+            while the posts below can be reloaded client-side with React!
+        </div>
+
+        <!-- This is now a React component that can reload data client-side -->
+        <PostsReloader
+            client:load
+            initialPosts={latestPosts}
+            totalPosts={totalPosts}
+        />
+    </main>
+</Page>

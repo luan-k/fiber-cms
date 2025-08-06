@@ -1,11 +1,9 @@
 ---
-import BaseHead from '../components/BaseHead.astro';
-import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
-import FormattedDate from '../components/FormattedDate.astro';
-import { SITE_TITLE } from '../consts';
-import { api } from '../lib/api';
-import type { Media } from '../lib/types';
+import Page from "@/layouts/Page.astro"
+import FormattedDate from "@/components/FormattedDate.astro"
+import { SITE_TITLE } from "@/consts"
+import { api } from "@/lib/api"
+import type { Media } from "@/lib/types"
 
 let mediaItems: Media[] = [];
 let error: string | null = null;
@@ -19,10 +17,8 @@ try {
 }
 ---
 
-<!doctype html>
-<html lang="en">
-    <head>
-        <BaseHead title={`Media - ${SITE_TITLE}`} description="Media files from our CMS" />
+<Page title={`Media - ${SITE_TITLE}`} description="Media files from our CMS">
+    <Fragment slot="head">
         <style>
             main {
                 width: 960px;
@@ -83,45 +79,41 @@ try {
                 margin: 2rem 0;
             }
         </style>
-    </head>
-    <body>
-        <Header />
-        <main>
-            <h1>Media Library</h1>
-            <p>Files uploaded to our content management system</p>
+    </Fragment>
+    <main>
+        <h1>Media Library</h1>
+        <p>Files uploaded to our content management system</p>
 
-            {error && (
-                <div class="error">
-                    <strong>Error:</strong> {error}
-                </div>
-            )}
+        {error && (
+            <div class="error">
+                <strong>Error:</strong> {error}
+            </div>
+        )}
 
-            {mediaItems.length === 0 && !error && (
-                <p>No media files found. Check if your Go backend is running.</p>
-            )}
+        {mediaItems.length === 0 && !error && (
+            <p>No media files found. Check if your Go backend is running.</p>
+        )}
 
-            <div class="media-grid">
-                {mediaItems.map((media) => (
-                    <div class="media-card">
-                        <div class="media-preview">
-                            {media.mime_type && media.mime_type.startsWith('image/') ? '🖼️' : 
-                             media.mime_type && media.mime_type.startsWith('video/') ? '🎥' : 
-                             media.mime_type && media.mime_type.startsWith('audio/') ? '🎵' : '📄'}
+        <div class="media-grid">
+            {mediaItems.map((media) => (
+                <div class="media-card">
+                    <div class="media-preview">
+                        {media.mime_type && media.mime_type.startsWith('image/') ? '🖼️' : 
+                            media.mime_type && media.mime_type.startsWith('video/') ? '🎥' : 
+                            media.mime_type && media.mime_type.startsWith('audio/') ? '🎵' : '📄'}
+                    </div>
+                    <div class="media-info">
+                        <h3 class="media-filename">{media.original_name || media.filename || 'Unknown file'}</h3>
+                        <div class="media-details">Type: {media.mime_type || 'Unknown'}</div>
+                        <div class="media-details">
+                            Size: <span class="media-size">{media.size ? (media.size / 1024).toFixed(1) : '0'} KB</span>
                         </div>
-                        <div class="media-info">
-                            <h3 class="media-filename">{media.original_name || media.filename || 'Unknown file'}</h3>
-                            <div class="media-details">Type: {media.mime_type || 'Unknown'}</div>
-                            <div class="media-details">
-                                Size: <span class="media-size">{media.size ? (media.size / 1024).toFixed(1) : '0'} KB</span>
-                            </div>
-                            <div class="media-details">
-                                Created: {new Date(media.created_at).toLocaleDateString()}
-                            </div>
+                        <div class="media-details">
+                            Created: {new Date(media.created_at).toLocaleDateString()}
                         </div>
                     </div>
-                ))}
-            </div>
-        </main>
-        <Footer />
-    </body>
-</html>
+                </div>
+            ))}
+        </div>
+    </main>
+</Page>

@@ -1,11 +1,9 @@
 ---
-import BaseHead from '../components/BaseHead.astro';
-import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
-import FormattedDate from '../components/FormattedDate.astro';
-import { SITE_TITLE } from '../consts';
-import { api } from '../lib/api';
-import type { User } from '../lib/types';
+import Page from "@/layouts/Page.astro"
+import FormattedDate from "@/components/FormattedDate.astro"
+import { SITE_TITLE } from "@/consts"
+import { api } from "@/lib/api"
+import type { User } from "@/lib/types"
 
 let users: User[] = [];
 let error: string | null = null;
@@ -19,11 +17,8 @@ try {
 }
 ---
 
-
-<!doctype html>
-<html lang="en">
-    <head>
-        <BaseHead title={`Users - ${SITE_TITLE}`} description="Users in our CMS" />
+<Page title={`Users - ${SITE_TITLE}`} description="Users in our CMS">
+    <Fragment slot="head">
         <style>
             main {
                 width: 960px;
@@ -102,40 +97,37 @@ try {
                 margin: 2rem 0;
             }
         </style>
-    </head>
-    <body>
-        <Header />
-        <main>
-            <h1>Users</h1>
-            <p>Content creators and administrators</p>
+    </Fragment>
 
-            {error && (
-                <div class="error">
-                    <strong>Error:</strong> {error}
-                </div>
-            )}
+    <main>
+        <h1>Users</h1>
+        <p>Content creators and administrators</p>
 
-            {users.length === 0 && !error && (
-                <p>No users found. Check if your Go backend is running.</p>
-            )}
-
-            <div class="users-grid">
-                {users.map((user) => (
-                    <div class="user-card">
-                        <div class="user-avatar">
-                            {user.full_name.charAt(0).toUpperCase()}
-                        </div>
-                        <h3 class="user-name">{user.full_name}</h3>
-                        <div class="user-username">@{user.username}</div>
-                        <div class="user-email">{user.email}</div>
-                        <span class="user-role">{user.role}</span>
-                        <div class="user-date">
-                            Joined <FormattedDate date={new Date(user.created_at)} />
-                        </div>
-                    </div>
-                ))}
+        {error && (
+            <div class="error">
+                <strong>Error:</strong> {error}
             </div>
-        </main>
-        <Footer />
-    </body>
-</html>
+        )}
+
+        {users.length === 0 && !error && (
+            <p>No users found. Check if your Go backend is running.</p>
+        )}
+
+        <div class="users-grid">
+            {users.map((user) => (
+                <div class="user-card">
+                    <div class="user-avatar">
+                        {user.full_name.charAt(0).toUpperCase()}
+                    </div>
+                    <h3 class="user-name">{user.full_name}</h3>
+                    <div class="user-username">@{user.username}</div>
+                    <div class="user-email">{user.email}</div>
+                    <span class="user-role">{user.role}</span>
+                    <div class="user-date">
+                        Joined <FormattedDate date={new Date(user.created_at)} />
+                    </div>
+                </div>
+            ))}
+        </div>
+    </main>
+</Page>
