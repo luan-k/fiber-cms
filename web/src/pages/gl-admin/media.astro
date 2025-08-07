@@ -1,6 +1,6 @@
 ---
-// filepath: c:\Projects\go-live-cms\web\src\pages\gl-admin\media.astro
 import Admin from '@/layouts/Admin/Layout.astro';
+import MediaCard from '@/components/gl-admin/media/MediaCard.astro';
 import "@/assets/styles/admin/media-page.scss";
 import { api, getMediaURL } from '@/lib/api';
 import type { Media } from '@/lib/types';
@@ -81,44 +81,27 @@ function isImage(mediaPath: string): boolean {
       </div>
     </div>
 
-    <!-- Media Grid -->
     {error && (
       <div class="error-message">
         <strong>Error:</strong> {error}
       </div>
     )}
 
-     <div class="media-container" id="media-container">
-    <div class="media-grid" id="media-grid">
-      {mediaItems.map((media) => (
-        <div class="media-item" data-id={media.id}>
-          <div class="media-thumbnail" data-media-id={media.id}>
-            {isImage(media.media_path) ? (
-              <img src={getMediaURL(media.media_path)} alt={media.alt} loading="lazy" />
-            ) : (
-              <div class="file-icon">{getFileIcon(media.media_path)}</div>
-            )}
-              <div class="media-overlay">
-                <button class="overlay-btn edit-btn" data-id={media.id} title="Edit">✏️</button>
-                <button class="overlay-btn delete-btn" data-id={media.id} title="Delete">🗑️</button>
-                <button class="overlay-btn copy-btn" data-path={media.media_path} title="Copy URL">📋</button>
-              </div>
-            </div>
-            <div class="media-info">
-              <h4 class="media-name" title={media.name}>{media.name}</h4>
-              <p class="media-description" title={media.description}>
-                {media.description.length > 60 ? media.description.substring(0, 60) + '...' : media.description}
-              </p>
-              <div class="media-meta">
-                <span class="upload-date">{new Date(media.created_at).toLocaleDateString()}</span>
-                {media.post_count && media.post_count > 0 && (
-                  <span class="usage-count">{media.post_count} {media.post_count === 1 ? 'post' : 'posts'}</span>
-                )}
-              </div>
-            </div>
-          </div>
+    <div class="media-container" id="media-container">
+      <div class="media-grid" id="media-grid">
+        {mediaItems.map((media) => (
+          <MediaCard media={media} />
         ))}
       </div>
+
+      {mediaItems.length === 0 && !error && (
+        <div class="empty-state">
+          <div class="empty-icon">📂</div>
+          <h3>No media files yet</h3>
+          <p>Upload your first file by dropping it above or clicking "select files"</p>
+        </div>
+      )}
+    </div>
 
       {mediaItems.length === 0 && !error && (
         <div class="empty-state">
@@ -190,7 +173,7 @@ function isImage(mediaPath: string): boolean {
     const toastContainer = document.getElementById('toast-container')!;
 
     // Initialize
-    init();
+    /* init();
 
     function init() {
       setupEventListeners();
@@ -524,6 +507,6 @@ function isImage(mediaPath: string): boolean {
           toast.remove();
         }
       }, 5000);
-    }
+    } */
   </script>
 </Admin>
