@@ -102,15 +102,6 @@ function isImage(mediaPath: string): boolean {
         </div>
       )}
     </div>
-
-      {mediaItems.length === 0 && !error && (
-        <div class="empty-state">
-          <div class="empty-icon">📂</div>
-          <h3>No media files yet</h3>
-          <p>Upload your first file by dropping it above or clicking "select files"</p>
-        </div>
-      )}
-    </div>
   </div>
 
   <!-- Edit Modal -->
@@ -508,5 +499,13 @@ function isImage(mediaPath: string): boolean {
         }
       }, 5000);
     } */
+  </script>
+   <script>
+    import { initializeMediaCardHandlers } from '@/scripts/media-card-handlers';
+    
+    // Initialize media card handlers when page loads
+    document.addEventListener('DOMContentLoaded', () => {
+      initializeMediaCardHandlers();
+    });
   </script>
 </Admin>

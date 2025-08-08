@@ -1,16 +1,13 @@
-// Check if we're in Docker environment
 const isDocker =
   typeof window === "undefined" || process.env.NODE_ENV === "development";
 
 const API_BASE =
   isDocker && typeof window === "undefined"
-    ? "http://api:8080/api/v1" // Server-side (Docker container to container)
-    : "/api/v1"; // Client-side (use proxy)
+    ? "http://api:8080/api/v1"
+    : "/api/v1";
 
 const MEDIA_BASE =
-  isDocker && typeof window === "undefined"
-    ? "http://api:8080" // Server-side (Docker container to container)
-    : ""; // Client-side (use proxy)
+  isDocker && typeof window === "undefined" ? "http://api:8080" : "";
 
 console.log("API_BASE:", API_BASE);
 console.log("MEDIA_BASE:", MEDIA_BASE);
@@ -38,9 +35,10 @@ export function getMediaURL(mediaPath: string): string {
   if (mediaPath.startsWith("http")) {
     return mediaPath;
   }
-  // Remove leading slash if present and add it back consistently
+
   const cleanPath = mediaPath.startsWith("/") ? mediaPath : `/${mediaPath}`;
-  return `${MEDIA_BASE}${cleanPath}`;
+
+  return cleanPath;
 }
 
 export async function apiCall(endpoint: string, options: ApiOptions = {}) {
@@ -118,7 +116,6 @@ async function authenticatedFetch(
 
   let response = await makeRequest(token!);
 
-  // Handle token expiration
   if (response.status === 401 && typeof window !== "undefined") {
     console.log("Token expired, attempting refresh...");
 
