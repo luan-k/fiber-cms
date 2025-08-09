@@ -1,0 +1,96 @@
+/* Remove default styles for table related tags */
+
+table,
+thead,
+tbody,
+tfoot,
+tr,
+th,
+td,
+caption {
+  all: unset; // removes *all* inherited/default browser styles
+  display: revert; // ensures they still behave like their semantic element
+  box-sizing: border-box;
+}
+
+// Alternative to `all: unset` if you want a softer reset:
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+  width: 100%;
+}
+
+th,
+td {
+  margin: 0;
+  padding: 0;
+  border: none;
+  font: inherit;
+  color: inherit;
+  background: none;
+  vertical-align: middle;
+}
+
+caption {
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  padding: 0;
+}
+
+/* Actual g-table styles */
+
+.gl-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+  background: #fff;
+
+  thead,
+  tbody {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    align-self: stretch;
+  }
+
+  thead {
+    border-bottom: 1px solid #B3B3B3;
+  }
+
+  thead > tr,
+  tbody > tr {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  th,
+  td {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0.75rem 1rem;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  th {
+    color: #333536;
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 130%;
+  }
+
+  tbody > tr + tr {
+    border-top: 1px solid #e6e6e6;
+  }
+
+  tbody > tr:hover {
+    background: #f8f8f8;
+  }
+}
