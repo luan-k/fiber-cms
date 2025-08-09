@@ -243,9 +243,14 @@ func (q *Queries) GetMediaByPost(ctx context.Context, postID int64) ([]Medium, e
 }
 
 const getMediaByUser = `-- name: GetMediaByUser :many
-SELECT id, name, description, alt, media_path, user_id, created_at, changed_at, file_size, mime_type, width, height, duration, original_filename, metadata FROM media
-WHERE user_id = $1
-ORDER BY created_at DESC
+SELECT 
+    m.id, m.name, m.description, m.alt, m.media_path, m.user_id, m.created_at, m.changed_at, m.file_size, m.mime_type, m.width, m.height, m.duration, m.original_filename, m.metadata,
+    COUNT(pm.post_id) as post_count
+FROM media m
+LEFT JOIN post_media pm ON m.id = pm.media_id
+WHERE m.user_id = $1
+GROUP BY m.id, m.name, m.description, m.alt, m.media_path, m.user_id, m.created_at, m.changed_at, m.file_size, m.mime_type, m.width, m.height, m.duration, m.original_filename, m.metadata
+ORDER BY m.created_at DESC
 LIMIT $2
 OFFSET $3
 `
@@ -256,15 +261,34 @@ type GetMediaByUserParams struct {
 	Offset int32 `json:"offset"`
 }
 
-func (q *Queries) GetMediaByUser(ctx context.Context, arg GetMediaByUserParams) ([]Medium, error) {
+type GetMediaByUserRow struct {
+	ID               int64           `json:"id"`
+	Name             string          `json:"name"`
+	Description      string          `json:"description"`
+	Alt              string          `json:"alt"`
+	MediaPath        string          `json:"media_path"`
+	UserID           int64           `json:"user_id"`
+	CreatedAt        time.Time       `json:"created_at"`
+	ChangedAt        time.Time       `json:"changed_at"`
+	FileSize         int64           `json:"file_size"`
+	MimeType         string          `json:"mime_type"`
+	Width            int32           `json:"width"`
+	Height           int32           `json:"height"`
+	Duration         int32           `json:"duration"`
+	OriginalFilename string          `json:"original_filename"`
+	Metadata         json.RawMessage `json:"metadata"`
+	PostCount        int64           `json:"post_count"`
+}
+
+func (q *Queries) GetMediaByUser(ctx context.Context, arg GetMediaByUserParams) ([]GetMediaByUserRow, error) {
 	rows, err := q.db.QueryContext(ctx, getMediaByUser, arg.UserID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []Medium{}
+	items := []GetMediaByUserRow{}
 	for rows.Next() {
-		var i Medium
+		var i GetMediaByUserRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
@@ -281,6 +305,7 @@ func (q *Queries) GetMediaByUser(ctx context.Context, arg GetMediaByUserParams) 
 			&i.Duration,
 			&i.OriginalFilename,
 			&i.Metadata,
+			&i.PostCount,
 		); err != nil {
 			return nil, err
 		}
@@ -542,57 +567,6 @@ func (q *Queries) GetUserMediaCount(ctx context.Context, userID int64) (int64, e
 }
 
 const listMedia = `-- name: ListMedia :many
-SELECT id, name, description, alt, media_path, user_id, created_at, changed_at, file_size, mime_type, width, height, duration, original_filename, metadata FROM media
-ORDER BY created_at DESC
-LIMIT $1
-OFFSET $2
-`
-
-type ListMediaParams struct {
-	Limit  int32 `json:"limit"`
-	Offset int32 `json:"offset"`
-}
-
-func (q *Queries) ListMedia(ctx context.Context, arg ListMediaParams) ([]Medium, error) {
-	rows, err := q.db.QueryContext(ctx, listMedia, arg.Limit, arg.Offset)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []Medium{}
-	for rows.Next() {
-		var i Medium
-		if err := rows.Scan(
-			&i.ID,
-			&i.Name,
-			&i.Description,
-			&i.Alt,
-			&i.MediaPath,
-			&i.UserID,
-			&i.CreatedAt,
-			&i.ChangedAt,
-			&i.FileSize,
-			&i.MimeType,
-			&i.Width,
-			&i.Height,
-			&i.Duration,
-			&i.OriginalFilename,
-			&i.Metadata,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listMediaWithPostCount = `-- name: ListMediaWithPostCount :many
 SELECT 
     m.id, m.name, m.description, m.alt, m.media_path, m.user_id, m.created_at, m.changed_at, m.file_size, m.mime_type, m.width, m.height, m.duration, m.original_filename, m.metadata,
     COUNT(pm.post_id) as post_count
@@ -604,12 +578,12 @@ LIMIT $1
 OFFSET $2
 `
 
-type ListMediaWithPostCountParams struct {
+type ListMediaParams struct {
 	Limit  int32 `json:"limit"`
 	Offset int32 `json:"offset"`
 }
 
-type ListMediaWithPostCountRow struct {
+type ListMediaRow struct {
 	ID               int64           `json:"id"`
 	Name             string          `json:"name"`
 	Description      string          `json:"description"`
@@ -628,15 +602,15 @@ type ListMediaWithPostCountRow struct {
 	PostCount        int64           `json:"post_count"`
 }
 
-func (q *Queries) ListMediaWithPostCount(ctx context.Context, arg ListMediaWithPostCountParams) ([]ListMediaWithPostCountRow, error) {
-	rows, err := q.db.QueryContext(ctx, listMediaWithPostCount, arg.Limit, arg.Offset)
+func (q *Queries) ListMedia(ctx context.Context, arg ListMediaParams) ([]ListMediaRow, error) {
+	rows, err := q.db.QueryContext(ctx, listMedia, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []ListMediaWithPostCountRow{}
+	items := []ListMediaRow{}
 	for rows.Next() {
-		var i ListMediaWithPostCountRow
+		var i ListMediaRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
@@ -749,9 +723,14 @@ func (q *Queries) ListPostsWithMedia(ctx context.Context, arg ListPostsWithMedia
 }
 
 const searchMediaByName = `-- name: SearchMediaByName :many
-SELECT id, name, description, alt, media_path, user_id, created_at, changed_at, file_size, mime_type, width, height, duration, original_filename, metadata FROM media
-WHERE name ILIKE '%' || $1 || '%' OR description ILIKE '%' || $1 || '%'
-ORDER BY created_at DESC
+SELECT 
+    m.id, m.name, m.description, m.alt, m.media_path, m.user_id, m.created_at, m.changed_at, m.file_size, m.mime_type, m.width, m.height, m.duration, m.original_filename, m.metadata,
+    COUNT(pm.post_id) as post_count
+FROM media m
+LEFT JOIN post_media pm ON m.id = pm.media_id
+WHERE m.name ILIKE '%' || $1 || '%' OR m.description ILIKE '%' || $1 || '%'
+GROUP BY m.id, m.name, m.description, m.alt, m.media_path, m.user_id, m.created_at, m.changed_at, m.file_size, m.mime_type, m.width, m.height, m.duration, m.original_filename, m.metadata
+ORDER BY m.created_at DESC
 LIMIT $2
 OFFSET $3
 `
@@ -762,15 +741,34 @@ type SearchMediaByNameParams struct {
 	Offset  int32          `json:"offset"`
 }
 
-func (q *Queries) SearchMediaByName(ctx context.Context, arg SearchMediaByNameParams) ([]Medium, error) {
+type SearchMediaByNameRow struct {
+	ID               int64           `json:"id"`
+	Name             string          `json:"name"`
+	Description      string          `json:"description"`
+	Alt              string          `json:"alt"`
+	MediaPath        string          `json:"media_path"`
+	UserID           int64           `json:"user_id"`
+	CreatedAt        time.Time       `json:"created_at"`
+	ChangedAt        time.Time       `json:"changed_at"`
+	FileSize         int64           `json:"file_size"`
+	MimeType         string          `json:"mime_type"`
+	Width            int32           `json:"width"`
+	Height           int32           `json:"height"`
+	Duration         int32           `json:"duration"`
+	OriginalFilename string          `json:"original_filename"`
+	Metadata         json.RawMessage `json:"metadata"`
+	PostCount        int64           `json:"post_count"`
+}
+
+func (q *Queries) SearchMediaByName(ctx context.Context, arg SearchMediaByNameParams) ([]SearchMediaByNameRow, error) {
 	rows, err := q.db.QueryContext(ctx, searchMediaByName, arg.Column1, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []Medium{}
+	items := []SearchMediaByNameRow{}
 	for rows.Next() {
-		var i Medium
+		var i SearchMediaByNameRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
@@ -787,6 +785,7 @@ func (q *Queries) SearchMediaByName(ctx context.Context, arg SearchMediaByNamePa
 			&i.Duration,
 			&i.OriginalFilename,
 			&i.Metadata,
+			&i.PostCount,
 		); err != nil {
 			return nil, err
 		}

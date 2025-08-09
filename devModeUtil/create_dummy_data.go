@@ -181,7 +181,7 @@ func createDummyMedia(store db.Store, users []db.User, config util.Config) []db.
 		}
 
 		mediaParams := db.CreateMediaParams{
-			Name:             fmt.Sprintf("Sample Image %d", i+1),
+			Name:             filename,
 			Description:      gofakeit.Sentence(8),
 			Alt:              fmt.Sprintf("Beautiful sample image number %d", i+1),
 			MediaPath:        fmt.Sprintf("%s/%s", config.UploadPath, filename),

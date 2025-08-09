@@ -109,7 +109,69 @@ func toMediaResponse(media db.Medium) MediaResponse {
 	}
 }
 
-func toMediaWithCountResponse(row db.ListMediaWithPostCountRow) MediaResponse {
+func toMediaFromListRow(row db.ListMediaRow) MediaResponse {
+	var width, height, duration *int32
+	if row.Width != 0 {
+		width = &row.Width
+	}
+	if row.Height != 0 {
+		height = &row.Height
+	}
+	if row.Duration != 0 {
+		duration = &row.Duration
+	}
+
+	return MediaResponse{
+		ID:               row.ID,
+		Name:             row.Name,
+		Description:      row.Description,
+		Alt:              row.Alt,
+		MediaPath:        row.MediaPath,
+		UserID:           row.UserID,
+		CreatedAt:        row.CreatedAt,
+		ChangedAt:        row.ChangedAt,
+		PostCount:        &row.PostCount,
+		FileSize:         row.FileSize,
+		MimeType:         row.MimeType,
+		Width:            width,
+		Height:           height,
+		Duration:         duration,
+		OriginalFilename: row.OriginalFilename,
+	}
+}
+
+func toMediaFromUserRow(row db.GetMediaByUserRow) MediaResponse {
+	var width, height, duration *int32
+	if row.Width != 0 {
+		width = &row.Width
+	}
+	if row.Height != 0 {
+		height = &row.Height
+	}
+	if row.Duration != 0 {
+		duration = &row.Duration
+	}
+
+	return MediaResponse{
+		ID:               row.ID,
+		Name:             row.Name,
+		Description:      row.Description,
+		Alt:              row.Alt,
+		MediaPath:        row.MediaPath,
+		UserID:           row.UserID,
+		CreatedAt:        row.CreatedAt,
+		ChangedAt:        row.ChangedAt,
+		PostCount:        &row.PostCount,
+		FileSize:         row.FileSize,
+		MimeType:         row.MimeType,
+		Width:            width,
+		Height:           height,
+		Duration:         duration,
+		OriginalFilename: row.OriginalFilename,
+	}
+}
+
+func toMediaFromSearchRow(row db.SearchMediaByNameRow) MediaResponse {
 	var width, height, duration *int32
 	if row.Width != 0 {
 		width = &row.Width
@@ -497,8 +559,8 @@ func (server *Server) getMedia(c *gin.Context) {
 	}
 
 	if withCounts == "true" {
-
-		media, err := server.store.ListMediaWithPostCount(c.Request.Context(), db.ListMediaWithPostCountParams{
+		// Now all queries include counts, so just use regular ListMedia
+		media, err := server.store.ListMedia(c.Request.Context(), db.ListMediaParams{
 			Limit:  int32(limit),
 			Offset: int32(offset),
 		})
@@ -509,7 +571,7 @@ func (server *Server) getMedia(c *gin.Context) {
 
 		mediaResponses := make([]MediaResponse, len(media))
 		for i, m := range media {
-			mediaResponses[i] = toMediaWithCountResponse(m)
+			mediaResponses[i] = toMediaFromListRow(m)
 		}
 
 		totalCount, err := server.store.CountTotalMedia(c.Request.Context())
@@ -541,7 +603,7 @@ func (server *Server) getMedia(c *gin.Context) {
 
 		mediaResponses := make([]MediaResponse, len(media))
 		for i, m := range media {
-			mediaResponses[i] = toMediaResponse(m)
+			mediaResponses[i] = toMediaFromListRow(m)
 		}
 
 		total, err := server.store.CountTotalMedia(c.Request.Context())
@@ -632,7 +694,7 @@ func (server *Server) searchMedia(c *gin.Context) {
 
 	mediaResponses := make([]MediaResponse, len(media))
 	for i, m := range media {
-		mediaResponses[i] = toMediaResponse(m)
+		mediaResponses[i] = toMediaFromSearchRow(m)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -694,7 +756,7 @@ func (server *Server) getMediaByUser(c *gin.Context) {
 
 	mediaResponses := make([]MediaResponse, len(media))
 	for i, m := range media {
-		mediaResponses[i] = toMediaResponse(m)
+		mediaResponses[i] = toMediaFromUserRow(m)
 	}
 
 	c.JSON(http.StatusOK, gin.H{

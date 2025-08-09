@@ -20,15 +20,25 @@ SELECT * FROM media
 WHERE id = $1 LIMIT 1;
 
 -- name: GetMediaByUser :many
-SELECT * FROM media
-WHERE user_id = $1
-ORDER BY created_at DESC
+SELECT 
+    m.*,
+    COUNT(pm.post_id) as post_count
+FROM media m
+LEFT JOIN post_media pm ON m.id = pm.media_id
+WHERE m.user_id = $1
+GROUP BY m.id, m.name, m.description, m.alt, m.media_path, m.user_id, m.created_at, m.changed_at, m.file_size, m.mime_type, m.width, m.height, m.duration, m.original_filename, m.metadata
+ORDER BY m.created_at DESC
 LIMIT $2
 OFFSET $3;
 
 -- name: ListMedia :many
-SELECT * FROM media
-ORDER BY created_at DESC
+SELECT 
+    m.*,
+    COUNT(pm.post_id) as post_count
+FROM media m
+LEFT JOIN post_media pm ON m.id = pm.media_id
+GROUP BY m.id, m.name, m.description, m.alt, m.media_path, m.user_id, m.created_at, m.changed_at, m.file_size, m.mime_type, m.width, m.height, m.duration, m.original_filename, m.metadata
+ORDER BY m.created_at DESC
 LIMIT $1
 OFFSET $2;
 
@@ -58,9 +68,14 @@ DELETE FROM media
 WHERE user_id = $1;
 
 -- name: SearchMediaByName :many
-SELECT * FROM media
-WHERE name ILIKE '%' || $1 || '%' OR description ILIKE '%' || $1 || '%'
-ORDER BY created_at DESC
+SELECT 
+    m.*,
+    COUNT(pm.post_id) as post_count
+FROM media m
+LEFT JOIN post_media pm ON m.id = pm.media_id
+WHERE m.name ILIKE '%' || $1 || '%' OR m.description ILIKE '%' || $1 || '%'
+GROUP BY m.id, m.name, m.description, m.alt, m.media_path, m.user_id, m.created_at, m.changed_at, m.file_size, m.mime_type, m.width, m.height, m.duration, m.original_filename, m.metadata
+ORDER BY m.created_at DESC
 LIMIT $2
 OFFSET $3;
 
@@ -98,17 +113,6 @@ WHERE media_id = $1;
 -- name: GetPostMediaCount :one
 SELECT COUNT(*) FROM post_media
 WHERE post_id = $1;
-
--- name: ListMediaWithPostCount :many
-SELECT 
-    m.*,
-    COUNT(pm.post_id) as post_count
-FROM media m
-LEFT JOIN post_media pm ON m.id = pm.media_id
-GROUP BY m.id, m.name, m.description, m.alt, m.media_path, m.user_id, m.created_at, m.changed_at, m.file_size, m.mime_type, m.width, m.height, m.duration, m.original_filename, m.metadata
-ORDER BY m.created_at DESC
-LIMIT $1
-OFFSET $2;
 
 -- name: GetPopularMedia :many
 SELECT 
