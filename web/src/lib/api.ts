@@ -104,8 +104,8 @@ export const api = {
 
   logout: (data: { refresh_token: string }) =>
     apiCall("/auth/logout", { method: "POST", body: data }),
-  getPosts: async () => {
-    const response: ApiResponse<any> = await apiCall("/posts");
+  getPosts: async (query: string = "" ) => {
+    const response: ApiResponse<any> = await apiCall(`/posts?${query}`);
     return {
       data: response.posts || [],
       meta: response.meta || { count: 0, limit: 10, offset: 0, total: 0 },
