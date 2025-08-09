@@ -3,6 +3,10 @@ package devModeUtil
 import (
 	"context"
 	"fmt"
+	"image"
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
 	"io"
 	"log"
 	"net/http"
@@ -161,12 +165,33 @@ func createDummyMedia(store db.Store, users []db.User, config util.Config) []db.
 			break
 		}
 
+		fileInfo, err := os.Stat(filePath)
+		if err != nil {
+			log.Printf("❌ Failed to get file info for image %d: %v", i+1, err)
+			continue
+		}
+
+		var width, height int32 = 0, 0
+		if imageFile, err := os.Open(filePath); err == nil {
+			if config, _, err := image.DecodeConfig(imageFile); err == nil {
+				width = int32(config.Width)
+				height = int32(config.Height)
+			}
+			imageFile.Close()
+		}
+
 		mediaParams := db.CreateMediaParams{
-			Name:        fmt.Sprintf("Sample Image %d", i+1),
-			Description: gofakeit.Sentence(8),
-			Alt:         fmt.Sprintf("Beautiful sample image number %d", i+1),
-			MediaPath:   fmt.Sprintf("%s/%s", config.UploadPath, filename),
-			UserID:      users[userIndex].ID,
+			Name:             fmt.Sprintf("Sample Image %d", i+1),
+			Description:      gofakeit.Sentence(8),
+			Alt:              fmt.Sprintf("Beautiful sample image number %d", i+1),
+			MediaPath:        fmt.Sprintf("%s/%s", config.UploadPath, filename),
+			UserID:           users[userIndex].ID,
+			FileSize:         fileInfo.Size(),
+			MimeType:         "image/jpeg",
+			Width:            width,
+			Height:           height,
+			Duration:         0,
+			OriginalFilename: filename,
 		}
 
 		createdMedia, err := store.CreateMedia(context.TODO(), mediaParams)

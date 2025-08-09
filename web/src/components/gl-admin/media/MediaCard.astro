@@ -45,7 +45,7 @@ const fileType = getFileType(media.media_path);
 const fileIcon = getFileIcon(media.media_path);
 const mediaURL = getMediaURL(media.media_path);
 const fileName = media.name;
-const fileSize = "temp"; //media.file_size ? formatFileSize(media.file_size) : 'Unknown size';
+const fileSize = media.file_size ? formatFileSize(media.file_size) : 'Unknown size';
 const postCount = media.post_count || 0;
 ---
 

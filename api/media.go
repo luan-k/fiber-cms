@@ -3,6 +3,10 @@ package api
 import (
 	"database/sql"
 	"fmt"
+	"image"
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -27,74 +31,143 @@ type CreateMediaRequest struct {
 }
 
 type UpdateMediaRequest struct {
-	Name        string `json:"name" binding:"omitempty,min=2,max=255"`
-	Description string `json:"description" binding:"omitempty,min=5,max=500"`
-	Alt         string `json:"alt" binding:"omitempty,min=2,max=255"`
-	MediaPath   string `json:"media_path" binding:"omitempty,min=1,max=500"`
+	Name             string `json:"name" binding:"omitempty,min=2,max=255"`
+	Description      string `json:"description" binding:"omitempty,min=5,max=500"`
+	Alt              string `json:"alt" binding:"omitempty,min=2,max=255"`
+	MediaPath        string `json:"media_path" binding:"omitempty,min=1,max=500"`
+	FileSize         *int64 `json:"file_size" binding:"omitempty,min=0"`
+	MimeType         string `json:"mime_type" binding:"omitempty"`
+	Width            *int32 `json:"width" binding:"omitempty,min=0"`
+	Height           *int32 `json:"height" binding:"omitempty,min=0"`
+	Duration         *int32 `json:"duration" binding:"omitempty,min=0"`
+	OriginalFilename string `json:"original_filename" binding:"omitempty"`
 }
 
 type MediaResponse struct {
-	ID          int64     `json:"id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	Alt         string    `json:"alt"`
-	MediaPath   string    `json:"media_path"`
-	UserID      int64     `json:"user_id"`
-	CreatedAt   time.Time `json:"created_at"`
-	ChangedAt   time.Time `json:"changed_at"`
-	PostCount   *int64    `json:"post_count,omitempty"`
+	ID               int64     `json:"id"`
+	Name             string    `json:"name"`
+	Description      string    `json:"description"`
+	Alt              string    `json:"alt"`
+	MediaPath        string    `json:"media_path"`
+	UserID           int64     `json:"user_id"`
+	CreatedAt        time.Time `json:"created_at"`
+	ChangedAt        time.Time `json:"changed_at"`
+	PostCount        *int64    `json:"post_count,omitempty"`
+	FileSize         int64     `json:"file_size"`
+	MimeType         string    `json:"mime_type"`
+	Width            *int32    `json:"width,omitempty"`
+	Height           *int32    `json:"height,omitempty"`
+	Duration         *int32    `json:"duration,omitempty"`
+	OriginalFilename string    `json:"original_filename"`
 }
 
 type PopularMediaResponse struct {
-	ID          int64     `json:"id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	Alt         string    `json:"alt"`
-	MediaPath   string    `json:"media_path"`
-	UserID      int64     `json:"user_id"`
-	CreatedAt   time.Time `json:"created_at"`
-	ChangedAt   time.Time `json:"changed_at"`
-	PostCount   int64     `json:"post_count"`
+	ID               int64     `json:"id"`
+	Name             string    `json:"name"`
+	Description      string    `json:"description"`
+	Alt              string    `json:"alt"`
+	MediaPath        string    `json:"media_path"`
+	UserID           int64     `json:"user_id"`
+	CreatedAt        time.Time `json:"created_at"`
+	ChangedAt        time.Time `json:"changed_at"`
+	PostCount        int64     `json:"post_count"`
+	FileSize         int64     `json:"file_size"`
+	MimeType         string    `json:"mime_type"`
+	Width            *int32    `json:"width,omitempty"`
+	Height           *int32    `json:"height,omitempty"`
+	Duration         *int32    `json:"duration,omitempty"`
+	OriginalFilename string    `json:"original_filename"`
 }
 
 func toMediaResponse(media db.Medium) MediaResponse {
+	var width, height, duration *int32
+	if media.Width != 0 {
+		width = &media.Width
+	}
+	if media.Height != 0 {
+		height = &media.Height
+	}
+	if media.Duration != 0 {
+		duration = &media.Duration
+	}
+
 	return MediaResponse{
-		ID:          media.ID,
-		Name:        media.Name,
-		Description: media.Description,
-		Alt:         media.Alt,
-		MediaPath:   media.MediaPath,
-		UserID:      media.UserID,
-		CreatedAt:   media.CreatedAt,
-		ChangedAt:   media.ChangedAt,
+		ID:               media.ID,
+		Name:             media.Name,
+		Description:      media.Description,
+		Alt:              media.Alt,
+		MediaPath:        media.MediaPath,
+		UserID:           media.UserID,
+		CreatedAt:        media.CreatedAt,
+		ChangedAt:        media.ChangedAt,
+		FileSize:         media.FileSize,
+		MimeType:         media.MimeType,
+		Width:            width,
+		Height:           height,
+		Duration:         duration,
+		OriginalFilename: media.OriginalFilename,
 	}
 }
 
 func toMediaWithCountResponse(row db.ListMediaWithPostCountRow) MediaResponse {
+	var width, height, duration *int32
+	if row.Width != 0 {
+		width = &row.Width
+	}
+	if row.Height != 0 {
+		height = &row.Height
+	}
+	if row.Duration != 0 {
+		duration = &row.Duration
+	}
+
 	return MediaResponse{
-		ID:          row.ID,
-		Name:        row.Name,
-		Description: row.Description,
-		Alt:         row.Alt,
-		MediaPath:   row.MediaPath,
-		UserID:      row.UserID,
-		CreatedAt:   row.CreatedAt,
-		ChangedAt:   row.ChangedAt,
-		PostCount:   &row.PostCount,
+		ID:               row.ID,
+		Name:             row.Name,
+		Description:      row.Description,
+		Alt:              row.Alt,
+		MediaPath:        row.MediaPath,
+		UserID:           row.UserID,
+		CreatedAt:        row.CreatedAt,
+		ChangedAt:        row.ChangedAt,
+		PostCount:        &row.PostCount,
+		FileSize:         row.FileSize,
+		MimeType:         row.MimeType,
+		Width:            width,
+		Height:           height,
+		Duration:         duration,
+		OriginalFilename: row.OriginalFilename,
 	}
 }
 
 func toPopularMediaResponse(row db.GetPopularMediaRow) PopularMediaResponse {
+	var width, height, duration *int32
+	if row.Width != 0 {
+		width = &row.Width
+	}
+	if row.Height != 0 {
+		height = &row.Height
+	}
+	if row.Duration != 0 {
+		duration = &row.Duration
+	}
+
 	return PopularMediaResponse{
-		ID:          row.ID,
-		Name:        row.Name,
-		Description: row.Description,
-		Alt:         row.Alt,
-		MediaPath:   row.MediaPath,
-		UserID:      row.UserID,
-		CreatedAt:   row.CreatedAt,
-		ChangedAt:   row.ChangedAt,
-		PostCount:   row.PostCount,
+		ID:               row.ID,
+		Name:             row.Name,
+		Description:      row.Description,
+		Alt:              row.Alt,
+		MediaPath:        row.MediaPath,
+		UserID:           row.UserID,
+		CreatedAt:        row.CreatedAt,
+		ChangedAt:        row.ChangedAt,
+		PostCount:        row.PostCount,
+		FileSize:         row.FileSize,
+		MimeType:         row.MimeType,
+		Width:            width,
+		Height:           height,
+		Duration:         duration,
+		OriginalFilename: row.OriginalFilename,
 	}
 }
 
@@ -137,6 +210,20 @@ func (server *Server) createMedia(c *gin.Context) {
 		return
 	}
 
+	fileSize := header.Size
+	mimeType := getFileMimeType(header.Filename)
+	originalFilename := header.Filename
+
+	var width, height int32 = 0, 0
+	if isImageFile(header.Filename) {
+		fullPath := filepath.Join(".", mediaPath)
+		if w, h, err := getImageDimensions(fullPath); err == nil {
+			width, height = w, h
+		}
+	}
+
+	var duration int32 = 0
+
 	if req.PostID != nil {
 		var order int32
 		if req.Order != nil {
@@ -146,13 +233,19 @@ func (server *Server) createMedia(c *gin.Context) {
 		}
 
 		result, err := server.store.CreateMediaAndLinkTx(c.Request.Context(), db.CreateMediaAndLinkTxParams{
-			Name:        req.Name,
-			Description: req.Description,
-			Alt:         req.Alt,
-			MediaPath:   mediaPath,
-			UserID:      userID,
-			PostID:      *req.PostID,
-			Order:       order,
+			Name:             req.Name,
+			Description:      req.Description,
+			Alt:              req.Alt,
+			MediaPath:        mediaPath,
+			UserID:           userID,
+			FileSize:         fileSize,
+			MimeType:         mimeType,
+			Width:            width,
+			Height:           height,
+			Duration:         duration,
+			OriginalFilename: originalFilename,
+			PostID:           *req.PostID,
+			Order:            order,
 		})
 		if err != nil {
 
@@ -171,11 +264,17 @@ func (server *Server) createMedia(c *gin.Context) {
 		})
 	} else {
 		media, err := server.store.CreateMedia(c.Request.Context(), db.CreateMediaParams{
-			Name:        req.Name,
-			Description: req.Description,
-			Alt:         req.Alt,
-			MediaPath:   mediaPath,
-			UserID:      userID,
+			Name:             req.Name,
+			Description:      req.Description,
+			Alt:              req.Alt,
+			MediaPath:        mediaPath,
+			UserID:           userID,
+			FileSize:         fileSize,
+			MimeType:         mimeType,
+			Width:            width,
+			Height:           height,
+			Duration:         duration,
+			OriginalFilename: originalFilename,
 		})
 		if err != nil {
 
@@ -267,6 +366,63 @@ func cleanFilename(filename string) string {
 	}
 
 	return cleaned
+}
+
+func getFileMimeType(filename string) string {
+	ext := strings.ToLower(filepath.Ext(filename))
+	mimeTypes := map[string]string{
+		".jpg":  "image/jpeg",
+		".jpeg": "image/jpeg",
+		".png":  "image/png",
+		".gif":  "image/gif",
+		".webp": "image/webp",
+		".bmp":  "image/bmp",
+		".svg":  "image/svg+xml",
+		".mp4":  "video/mp4",
+		".mov":  "video/quicktime",
+		".avi":  "video/x-msvideo",
+		".mkv":  "video/x-matroska",
+		".webm": "video/webm",
+		".mp3":  "audio/mpeg",
+		".wav":  "audio/wav",
+		".ogg":  "audio/ogg",
+		".m4a":  "audio/mp4",
+		".pdf":  "application/pdf",
+		".doc":  "application/msword",
+		".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+		".txt":  "text/plain",
+	}
+
+	if mimeType, exists := mimeTypes[ext]; exists {
+		return mimeType
+	}
+	return "application/octet-stream"
+}
+
+func getImageDimensions(filePath string) (int32, int32, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return 0, 0, err
+	}
+	defer file.Close()
+
+	config, _, err := image.DecodeConfig(file)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return int32(config.Width), int32(config.Height), nil
+}
+
+func isImageFile(filename string) bool {
+	ext := strings.ToLower(filepath.Ext(filename))
+	imageExts := []string{".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp"}
+	for _, imgExt := range imageExts {
+		if ext == imgExt {
+			return true
+		}
+	}
+	return false
 }
 
 func parseFileSize(sizeStr string) (int64, error) {
@@ -616,11 +772,17 @@ func (server *Server) updateMedia(c *gin.Context) {
 	}
 
 	updateParams := db.UpdateMediaParams{
-		ID:          id,
-		Name:        existingMedia.Name,
-		Description: existingMedia.Description,
-		Alt:         existingMedia.Alt,
-		MediaPath:   existingMedia.MediaPath,
+		ID:               id,
+		Name:             existingMedia.Name,
+		Description:      existingMedia.Description,
+		Alt:              existingMedia.Alt,
+		MediaPath:        existingMedia.MediaPath,
+		FileSize:         existingMedia.FileSize,
+		MimeType:         existingMedia.MimeType,
+		Width:            existingMedia.Width,
+		Height:           existingMedia.Height,
+		Duration:         existingMedia.Duration,
+		OriginalFilename: existingMedia.OriginalFilename,
 	}
 
 	if req.Name != "" {
@@ -634,6 +796,24 @@ func (server *Server) updateMedia(c *gin.Context) {
 	}
 	if req.MediaPath != "" {
 		updateParams.MediaPath = req.MediaPath
+	}
+	if req.FileSize != nil {
+		updateParams.FileSize = *req.FileSize
+	}
+	if req.MimeType != "" {
+		updateParams.MimeType = req.MimeType
+	}
+	if req.Width != nil {
+		updateParams.Width = *req.Width
+	}
+	if req.Height != nil {
+		updateParams.Height = *req.Height
+	}
+	if req.Duration != nil {
+		updateParams.Duration = *req.Duration
+	}
+	if req.OriginalFilename != "" {
+		updateParams.OriginalFilename = req.OriginalFilename
 	}
 
 	updatedMedia, err := server.store.UpdateMedia(c.Request.Context(), updateParams)

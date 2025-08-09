@@ -36,4 +36,10 @@ export interface Media {
   created_at: string;
   changed_at: string;
   post_count?: number;
+  file_size: number;
+  mime_type: string;
+  width?: number;
+  height?: number;
+  duration?: number;
+  original_filename: string;
 }
