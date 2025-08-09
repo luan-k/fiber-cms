@@ -27,8 +27,6 @@ export default function Table<T extends Record<string, any>>({
   className = '',
 }: TableProps<T>) {
 
-  console.log(columns[0])
-
   return (
     <table className={`gl-table ${className}`}>
       <thead>
