@@ -1,0 +1,10 @@
+.gl-admin {
+  &-media {
+    &__grid {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: repeat(4, 1fr); // todo: make this an attribute?
+      padding: 1rem;
+    }
+  }
+}

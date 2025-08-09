@@ -1,6 +1,7 @@
 ---
 import { getMediaURL } from '../../../lib/api';
 import type { Media } from '../../../lib/types';
+import "@assets/styles/admin/components/MediaCard.scss";
 
 interface Props {
   media: Media;
@@ -28,6 +29,7 @@ function getFileIcon(mediaPath: string): string {
   return '📁';
 }
 
+
 function formatFileSize(bytes: number): string {
   if (bytes === 0) return '0 B';
   const k = 1024;
@@ -47,11 +49,12 @@ const mediaURL = getMediaURL(media.media_path);
 const fileName = media.name;
 const fileSize = media.file_size ? formatFileSize(media.file_size) : 'Unknown size';
 const postCount = media.post_count || 0;
+
 ---
 
 <div class="gl-admin-media-card" data-id={media.id}>
   <div class="gl-admin-media-card__thumbnail">
-    <div class="gl-admin-media-card__type-badge" data-type={fileType}>
+    <div class={`gl-admin-media-card__type-badge gl-admin-media-card__type-badge--${fileType}`} data-type={fileType}>
       {fileType}
     </div>
     
@@ -68,17 +71,6 @@ const postCount = media.post_count || 0;
       </div>
     )}
     
-    <div class="gl-admin-media-card__overlay">
-      <button class="gl-admin-media-card__action gl-admin-media-card__action--edit" data-id={media.id} title="Edit">
-        ✏️
-      </button>
-      <button class="gl-admin-media-card__action gl-admin-media-card__action--delete" data-id={media.id} title="Delete">
-        🗑️
-      </button>
-      <button class="gl-admin-media-card__action gl-admin-media-card__action--copy" data-path={media.media_path} title="Copy URL">
-        📋
-      </button>
-    </div>
   </div>
   
   <div class="gl-admin-media-card__content">

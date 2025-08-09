@@ -4,6 +4,8 @@ import MediaCard from '@/components/gl-admin/media/MediaCard.astro';
 import "@/assets/styles/admin/media-page.scss";
 import { api, getMediaURL } from '@/lib/api';
 import type { Media } from '@/lib/types';
+import GLAdminButton from '@/components/ui/Button';
+import Icon from '@/components/Icon.astro';
 
 let mediaItems: Media[] = [];
 let error: string | null = null;
@@ -45,10 +47,7 @@ function isImage(mediaPath: string): boolean {
       <div class="gl-admin-media-header-right">
         <!-- add filters here -->
         <!-- add search functionality -->
-        <div class="gl-admin-media-header__search-box">
-          <input type="text" id="media-search" placeholder="Search media..." />
-          <span class="search-icon">🔍</span>
-        </div>
+       
       </div>
     </div>
 
@@ -56,16 +55,18 @@ function isImage(mediaPath: string): boolean {
       <div class="upload-content">
         <h3>Drop files to upload</h3>
         <div>
-          <span>or</span> 
-          <button class="upload-btn" id="select-files">select files</button>
-          
+          <span>or</span>
+          <div class="gl-admin-media__upload-area-button-wrapper">
+            <GLAdminButton className="gl-admin-media__upload-btn" id="gl-admin-media__upload-btn"> <Icon name="uploadIcon" color='white' width='14' height='14' /> Upload Files</GLAdminButton>
+            <GLAdminButton className="gl-admin-media__external-files-btn" id="gl-admin-media__external-files-btn" variation='flat'>Add External Files</GLAdminButton>
+          </div>
+
         </div>
-        <small>Maximum size: 50MB. Supported: Images, Videos, Audio, Documents</small>
+        <small>Maximum size: 50MB. Supported: Images, Videos, Audio, Documents <!-- TODO:import number from env size limit --> </small>
       </div>
       <input type="file" id="file-input" multiple accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt" style="display: none;" />
     </div>
 
-    <!-- Upload Progress -->
     <div class="upload-progress" id="upload-progress" style="display: none;">
       <div class="progress-item" id="progress-template" style="display: none;">
         <div class="progress-info">
@@ -85,8 +86,8 @@ function isImage(mediaPath: string): boolean {
       </div>
     )}
 
-    <div class="media-container" id="media-container">
-      <div class="media-grid" id="media-grid">
+    <div class="gl-admin-media__container" id="media-container">
+      <div class="gl-admin-media__grid" id="media-grid">
         {mediaItems.map((media) => (
           <MediaCard media={media} />
         ))}
